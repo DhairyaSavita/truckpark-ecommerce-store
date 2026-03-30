@@ -6,13 +6,31 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add token to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    console.log('Token being sent:', token ? 'Present' : 'Missing');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Response interceptor for debugging
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', error.response?.status, error.response?.data);
+    return Promise.reject(error);
+  }
+);
 
 // Auth endpoints
 export const auth = {
@@ -52,7 +70,7 @@ export const productReviews = {
   add: (data) => api.post('/reviews', data),
 };
 
-// Seller endpoints - FIXED
+// Seller endpoints
 export const sellerAPI = {
   getDashboard: () => api.get('/seller/dashboard'),
   getProducts: () => api.get('/seller/products'),
@@ -91,10 +109,12 @@ export const messages = {
 
 // Forum endpoints
 export const forumAPI = {
-  getPosts: () => api.get('/forum/posts'),
+  getPosts: (params) => api.get('/forum/posts', { params }),
   getPost: (id) => api.get(`/forum/posts/${id}`),
   createPost: (data) => api.post('/forum/posts', data),
+  likePost: (id) => api.post(`/forum/posts/${id}/like`),
   addComment: (postId, content) => api.post(`/forum/posts/${postId}/comments`, { content }),
+  likeComment: (id) => api.post(`/forum/comments/${id}/like`),
 };
 
 export default api;

@@ -21,7 +21,10 @@ const ForumPost = sequelize.define('ForumPost', {
   },
   category: {
     type: DataTypes.STRING,
-    defaultValue: 'general'
+    defaultValue: 'general',
+    validate: {
+      isIn: [['general', 'technical', 'business', 'announcements', 'marketing']]
+    }
   },
   likes: {
     type: DataTypes.INTEGER,
@@ -30,6 +33,10 @@ const ForumPost = sequelize.define('ForumPost', {
   views: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  is_pinned: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: 'forum_posts',

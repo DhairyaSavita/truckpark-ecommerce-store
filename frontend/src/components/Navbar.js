@@ -79,6 +79,9 @@ const Navbar = () => {
                           <CurrencyDollarIcon className="h-5 w-5 mr-3 text-gray-500" />
                           <span>Earnings</span>
                         </Link>
+                       <Link to="/forum" className="hover:text-gray-300">
+                        Community
+                        </Link>
                       </div>
                     </div>
                   </div>

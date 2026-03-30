@@ -55,6 +55,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/seller/products', require('./routes/seller/products'));
 app.use('/api/seller/orders', require('./routes/seller/orders'));
 app.use('/api/seller/earnings', require('./routes/seller/earnings'));
+app.use('/api/forum', require('./routes/forum'));
 
 // Test route
 app.get('/api/test', (req, res) => {

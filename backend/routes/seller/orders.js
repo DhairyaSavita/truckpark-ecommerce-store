@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../../models/Order');
 const OrderItem = require('../../models/OrderItem');
 const Product = require('../../models/Product');
+const User = require('../../models/User');
 const { verifyToken } = require('../../config/auth');
 
 // Middleware to check if user is seller or admin

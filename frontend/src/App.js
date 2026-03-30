@@ -1,5 +1,4 @@
 import React from 'react';
-import AdminSellers from './pages/Admin/Sellers';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -12,9 +11,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Orders from './pages/Orders';
 import BecomeSeller from './pages/BecomeSeller';
-import ForumList from './pages/Forum/ForumList';
-// import AddProduct from './pages/Seller/AddProduct';
-import AddProduct from './pages/Seller/AddProductSimple';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -22,12 +18,18 @@ import AdminUsers from './pages/Admin/Users';
 import AdminProducts from './pages/Admin/Products';
 import AdminOrders from './pages/Admin/Orders';
 import AdminMessages from './pages/Admin/Messages';
+import AdminSellers from './pages/Admin/Sellers';
 
 // Seller imports
 import SellerDashboard from './pages/Seller/Dashboard';
 import SellerProducts from './pages/Seller/Products';
 import SellerOrders from './pages/Seller/Orders';
 import SellerEarnings from './pages/Seller/Earnings';
+import AddProductSimple from './pages/Seller/AddProductSimple';
+
+// Forum imports
+import ForumList from './pages/Forum/ForumList';
+import ForumPost from './pages/Forum/ForumPost';
 
 const PrivateRoute = ({ children, adminOnly = false, sellerOnly = false }) => {
   const { user, loading } = useAuth();
@@ -43,32 +45,37 @@ const PrivateRoute = ({ children, adminOnly = false, sellerOnly = false }) => {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/admin/sellers" element={<PrivateRoute adminOnly><AdminSellers /></PrivateRoute>} />
+      {/* Public Routes */}
       <Route path="/" element={<Products />} />
       <Route path="/products" element={<Products />} />
       <Route path="/products/:id" element={<ProductDetails />} />
-      <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
       <Route path="/contact" element={<Contact />} />
-      <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      
+      {/* Forum Routes */}
+      <Route path="/forum" element={<ForumList />} />
+      <Route path="/forum/post/:id" element={<ForumPost />} />
+      
+      {/* Protected Routes */}
+      <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
+      <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
       <Route path="/become-seller" element={<PrivateRoute><BecomeSeller /></PrivateRoute>} />
       
-
       {/* Admin Routes */}
       <Route path="/admin" element={<PrivateRoute adminOnly><AdminDashboard /></PrivateRoute>} />
       <Route path="/admin/users" element={<PrivateRoute adminOnly><AdminUsers /></PrivateRoute>} />
       <Route path="/admin/products" element={<PrivateRoute adminOnly><AdminProducts /></PrivateRoute>} />
       <Route path="/admin/orders" element={<PrivateRoute adminOnly><AdminOrders /></PrivateRoute>} />
       <Route path="/admin/messages" element={<PrivateRoute adminOnly><AdminMessages /></PrivateRoute>} />
+      <Route path="/admin/sellers" element={<PrivateRoute adminOnly><AdminSellers /></PrivateRoute>} />
       
       {/* Seller Routes */}
       <Route path="/seller" element={<PrivateRoute sellerOnly><SellerDashboard /></PrivateRoute>} />
       <Route path="/seller/products" element={<PrivateRoute sellerOnly><SellerProducts /></PrivateRoute>} />
+      <Route path="/seller/products/new" element={<PrivateRoute sellerOnly><AddProductSimple /></PrivateRoute>} />
       <Route path="/seller/orders" element={<PrivateRoute sellerOnly><SellerOrders /></PrivateRoute>} />
       <Route path="/seller/earnings" element={<PrivateRoute sellerOnly><SellerEarnings /></PrivateRoute>} />
-      <Route path="/forum" element={<ForumList />} />
-      <Route path="/seller/products/new" element={<PrivateRoute sellerOnly><AddProduct /></PrivateRoute>} />
     </Routes>
   );
 }
