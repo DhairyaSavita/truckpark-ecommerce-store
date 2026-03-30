@@ -6,7 +6,10 @@ import {
   CubeIcon, 
   ChatBubbleLeftRightIcon,
   CurrencyDollarIcon,
-  TruckIcon
+  TruckIcon,
+  UserGroupIcon,
+  ClipboardDocumentListIcon,
+  ArrowTrendingUpIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -14,14 +17,15 @@ import toast from 'react-hot-toast';
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
+    totalSellers: 0,
     totalProducts: 0,
     totalOrders: 0,
-    totalCategories: 0,
     pendingOrders: 0,
-    totalMessages: 0,
     totalRevenue: 0,
+    lowStockProducts: 0,
+    pendingSellers: 0,
     recentOrders: [],
-    recentMessages: []
+    recentUsers: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -32,18 +36,7 @@ const Dashboard = () => {
   const fetchStats = async () => {
     try {
       const response = await admin.getStats();
-      console.log('Stats response:', response.data);
-      setStats({
-        totalUsers: response.data?.totalUsers || 0,
-        totalProducts: response.data?.totalProducts || 0,
-        totalOrders: response.data?.totalOrders || 0,
-        totalCategories: response.data?.totalCategories || 0,
-        pendingOrders: response.data?.pendingOrders || 0,
-        totalMessages: response.data?.totalMessages || 0,
-        totalRevenue: response.data?.totalRevenue || 0,
-        recentOrders: response.data?.recentOrders || [],
-        recentMessages: response.data?.recentMessages || []
-      });
+      setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
       toast.error('Failed to fetch dashboard stats');
@@ -51,14 +44,6 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">Loading dashboard...</div>
-      </div>
-    );
-  }
 
   const statCards = [
     { 
@@ -69,47 +54,72 @@ const Dashboard = () => {
       link: '/admin/users'
     },
     { 
+      title: 'Total Sellers', 
+      value: stats.totalSellers, 
+      icon: UserGroupIcon, 
+      color: 'bg-green-500',
+      link: '/admin/sellers'
+    },
+    { 
       title: 'Total Products', 
       value: stats.totalProducts, 
       icon: CubeIcon, 
-      color: 'bg-green-500',
-      link: '/admin/products'
+      color: 'bg-purple-500',
+      link: '/admin/inventory'
     },
     { 
       title: 'Total Orders', 
       value: stats.totalOrders, 
       icon: ShoppingBagIcon, 
-      color: 'bg-purple-500',
+      color: 'bg-indigo-500',
       link: '/admin/orders'
     },
     { 
       title: 'Pending Orders', 
       value: stats.pendingOrders, 
-      icon: TruckIcon, 
-      color: 'bg-yellow-500',
+      icon: ClipboardDocumentListIcon, 
+      color: 'bg-orange-500',
       link: '/admin/orders?status=pending'
-    },
-    { 
-      title: 'New Messages', 
-      value: stats.totalMessages, 
-      icon: ChatBubbleLeftRightIcon, 
-      color: 'bg-red-500',
-      link: '/admin/messages'
     },
     { 
       title: 'Total Revenue', 
       value: `$${stats.totalRevenue.toFixed(2)}`, 
       icon: CurrencyDollarIcon, 
-      color: 'bg-indigo-500',
+      color: 'bg-yellow-500',
       link: '/admin/orders'
+    },
+    { 
+      title: 'Low Stock Items', 
+      value: stats.lowStockProducts, 
+      icon: TruckIcon, 
+      color: 'bg-red-500',
+      link: '/admin/inventory?filter=lowstock'
+    },
+    { 
+      title: 'Pending Sellers', 
+      value: stats.pendingSellers, 
+      icon: ChatBubbleLeftRightIcon, 
+      color: 'bg-pink-500',
+      link: '/admin/sellers?filter=pending'
     }
   ];
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-gray-600 mt-1">Manage users, sellers, orders, and inventory</p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statCards.map((stat, index) => (
           <Link to={stat.link} key={index}>
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer">
@@ -130,7 +140,12 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Recent Orders</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Recent Orders</h2>
+            <Link to="/admin/orders" className="text-blue-600 hover:text-blue-800 text-sm">
+              View all →
+            </Link>
+          </div>
           {stats.recentOrders && stats.recentOrders.length > 0 ? (
             <div className="space-y-3">
               {stats.recentOrders.map((order) => (
@@ -138,17 +153,18 @@ const Dashboard = () => {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-semibold">Order #{order.id}</p>
-                      <p className="text-sm text-gray-500">{order.User?.name || 'Unknown'}</p>
+                      <p className="text-sm text-gray-500">{order.User?.name || 'N/A'}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">${order.total_amount}</p>
+                      <p className="font-bold">${parseFloat(order.total_amount).toFixed(2)}</p>
                       <span className={`text-xs px-2 py-1 rounded ${
                         order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                         order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                        order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {order.status || 'pending'}
+                        {order.status}
                       </span>
                     </div>
                   </div>
@@ -158,38 +174,61 @@ const Dashboard = () => {
           ) : (
             <p className="text-gray-500 text-center py-4">No recent orders</p>
           )}
-          <Link to="/admin/orders" className="mt-4 inline-block text-blue-600 hover:text-blue-800">
-            View all orders →
-          </Link>
         </div>
         
-        {/* Recent Messages */}
+        {/* Recent Users */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">Recent Enquiries</h2>
-          {stats.recentMessages && stats.recentMessages.length > 0 ? (
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">Recent Users</h2>
+            <Link to="/admin/users" className="text-blue-600 hover:text-blue-800 text-sm">
+              View all →
+            </Link>
+          </div>
+          {stats.recentUsers && stats.recentUsers.length > 0 ? (
             <div className="space-y-3">
-              {stats.recentMessages.map((message) => (
-                <div key={message.id} className="border-b pb-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="font-semibold">{message.User?.name || 'Unknown'}</p>
-                      <p className="text-sm text-gray-600 truncate">{message.subject || 'No subject'}</p>
-                      <p className="text-xs text-gray-400">
-                        {new Date(message.created_at).toLocaleDateString()}
-                      </p>
+              {stats.recentUsers.map((user) => (
+                <div key={user.id} className="border-b pb-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold">{user.name}</p>
+                      <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
-                    {message.status === 'unread' && (
-                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded">New</span>
-                    )}
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' :
+                      user.role === 'seller' ? 'bg-green-100 text-green-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {user.role}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-4">No recent enquiries</p>
+            <p className="text-gray-500 text-center py-4">No recent users</p>
           )}
-          <Link to="/admin/messages" className="mt-4 inline-block text-blue-600 hover:text-blue-800">
-            View all enquiries →
+        </div>
+      </div>
+      
+      {/* Quick Actions */}
+      <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Link to="/admin/users" className="text-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+            <UsersIcon className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+            <span className="text-sm">Manage Users</span>
+          </Link>
+          <Link to="/admin/inventory" className="text-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+            <CubeIcon className="h-8 w-8 mx-auto text-green-600 mb-2" />
+            <span className="text-sm">Manage Products</span>
+          </Link>
+          <Link to="/admin/orders" className="text-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+            <ShoppingBagIcon className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+            <span className="text-sm">View Orders</span>
+          </Link>
+          <Link to="/admin/sellers" className="text-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+            <UserGroupIcon className="h-8 w-8 mx-auto text-orange-600 mb-2" />
+            <span className="text-sm">Manage Sellers</span>
           </Link>
         </div>
       </div>

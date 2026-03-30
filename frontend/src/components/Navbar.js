@@ -82,6 +82,10 @@ const Navbar = () => {
                        <Link to="/forum" className="hover:text-gray-300">
                         Community
                         </Link>
+                        <Link to="/admin/inventory" className="flex items-center px-4 py-2 hover:bg-gray-100">
+  <CubeIcon className="h-5 w-5 mr-3 text-gray-500" />
+  <span>Inventory</span>
+</Link>
                       </div>
                     </div>
                   </div>
