@@ -1,0 +1,219 @@
+# ============================================
+# Truck Parts Marketplace - Git Ignore File
+# ============================================
+
+# -----------------------------
+# Dependencies
+# -----------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# -----------------------------
+# Backend Specific
+# -----------------------------
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/.env.*.local
+backend/dist/
+backend/build/
+backend/uploads/
+backend/temp/
+backend/logs/
+backend/*.log
+backend/.DS_Store
+
+# -----------------------------
+# Frontend Specific
+# -----------------------------
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/build/
+frontend/dist/
+frontend/.cache/
+frontend/.DS_Store
+frontend/coverage/
+frontend/.next/
+frontend/out/
+
+# -----------------------------
+# Database
+# -----------------------------
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+backup/
+database-backup/
+*.sql
+
+# -----------------------------
+# Environment Variables
+# -----------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.backup
+*.env
+.env.*.local
+
+# -----------------------------
+# IDE and Editor Files
+# -----------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.iml
+.project
+.classpath
+
+# -----------------------------
+# OS Generated Files
+# -----------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.dll
+*.exe
+
+# -----------------------------
+# Logs
+# -----------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# -----------------------------
+# Testing
+# -----------------------------
+coverage/
+.nyc_output/
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
+jest.config.js
+
+# -----------------------------
+# Build Outputs
+# -----------------------------
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+
+# -----------------------------
+# Docker
+# -----------------------------
+docker-compose.override.yml
+.docker/
+Dockerfile.dev
+*.dockerignore
+
+# -----------------------------
+# Misc
+# -----------------------------
+*.pid
+*.seed
+*.pid.lock
+*.tgz
+*.tar.gz
+*.zip
+.vercel
+.netlify
+.history
+.sentry-native/
+
+# -----------------------------
+# Backup Files
+# -----------------------------
+*.backup
+*.bak
+*.old
+*.orig
+*.rej
+*.swp
+backup_*
+backup-*
+*.sql-backup
+
+# -----------------------------
+# API Keys and Secrets
+# -----------------------------
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+*.secret
+.env.production
+
+# -----------------------------
+# User Uploads
+# -----------------------------
+uploads/
+uploads/*
+!uploads/.gitkeep
+public/uploads/
+private/uploads/
+media/
+
+# -----------------------------
+# Documentation
+# -----------------------------
+docs/_build/
+docs/api/
+*.pdf
+*.doc
+site/
+
+# -----------------------------
+# Performance
+# -----------------------------
+*.heap
+*.heapsnapshot
+*.heaptimeline
+*.cpuprofile
+
+# -----------------------------
+# Temporary Files
+# -----------------------------
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.npm/

@@ -1,0 +1,44 @@
+# Backend Specific Git Ignore
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+backups/
+
+# Uploads
+uploads/
+public/uploads/
+temp/
+storage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build
+dist/
+build/
+
+# Config
+config/local.json
+config/development.json
+config/production.json
+
+# Secrets
+*.key
+*.pem
+*.crt
+secrets/
+credentials/

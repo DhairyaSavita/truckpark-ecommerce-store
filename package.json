@@ -1,0 +1,23 @@
+{
+  "name": "truck-parts-marketplace",
+  "version": "1.0.0",
+  "description": "Multi-vendor truck parts marketplace",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "backup": "./scripts/backup-db.sh",
+    "rollback": "./scripts/rollback.sh",
+    "tag": "./scripts/tag-version.sh",
+    "commit": "./scripts/git-commit.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
