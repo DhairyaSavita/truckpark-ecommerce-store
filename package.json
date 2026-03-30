@@ -1,23 +1,16 @@
 {
-  "name": "truck-parts-marketplace",
+  "name": "truck-parts-ecommerce",
   "version": "1.0.0",
-  "description": "Multi-vendor truck parts marketplace",
+  "description": "Truck Spare Parts E-commerce Platform",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "backend": "cd backend && npm run dev",
     "frontend": "cd frontend && npm start",
     "setup": "npm install && cd backend && npm install && cd ../frontend && npm install",
-    "backup": "./scripts/backup-db.sh",
-    "rollback": "./scripts/rollback.sh",
-    "tag": "./scripts/tag-version.sh",
-    "commit": "./scripts/git-commit.sh"
+    "reset-db": "psql truck_parts_db -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && cd backend && npm run dev"
   },
   "devDependencies": {
     "concurrently": "^7.6.0"
-  },
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
   }
 }
