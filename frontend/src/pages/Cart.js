@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { cart, orders } from '../services/api';
+import { Link, useNavigate } from 'react-router-dom';
+import { cart } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, PlusIcon, MinusIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -19,12 +18,10 @@ const Cart = () => {
   const fetchCart = async () => {
     try {
       const response = await cart.get();
-      console.log('Cart response:', response.data);
       setCartItems(response.data || []);
     } catch (error) {
       console.error('Error fetching cart:', error);
       toast.error('Failed to load cart');
-      setCartItems([]);
     } finally {
       setLoading(false);
     }
@@ -36,7 +33,6 @@ const Cart = () => {
       await cart.update(id, newQuantity);
       fetchCart();
     } catch (error) {
-      console.error('Error updating quantity:', error);
       toast.error('Failed to update quantity');
     }
   };
@@ -47,36 +43,7 @@ const Cart = () => {
       toast.success('Item removed from cart');
       fetchCart();
     } catch (error) {
-      console.error('Error removing item:', error);
       toast.error('Failed to remove item');
-    }
-  };
-
-  const handleCheckout = async () => {
-    if (!user) {
-      toast.error('Please login to checkout');
-      navigate('/login');
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      toast.error('Your cart is empty');
-      return;
-    }
-
-    setCheckoutLoading(true);
-    try {
-      await orders.create({
-        shipping_address: user.address || 'Please update your address in profile',
-        payment_method: 'cash_on_delivery'
-      });
-      toast.success('Order placed successfully!');
-      navigate('/orders');
-    } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error(error.response?.data?.error || 'Failed to place order');
-    } finally {
-      setCheckoutLoading(false);
     }
   };
 
@@ -87,42 +54,35 @@ const Cart = () => {
     return 0;
   };
 
-  // Calculate total safely
   const calculateTotal = () => {
-    if (!cartItems || cartItems.length === 0) return 0;
     return cartItems.reduce((sum, item) => {
-      const product = item.Product || {};
-      const price = toNumber(product.price);
+      const price = toNumber(item.Product?.price);
       const quantity = toNumber(item.quantity);
       return sum + (price * quantity);
     }, 0);
   };
 
   const total = calculateTotal();
+  const shipping = total > 500 ? 0 : 50;
+  const tax = total * 0.05;
+  const grandTotal = total + shipping + tax;
 
   if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-10">
-          <div className="text-gray-500">Loading cart...</div>
-        </div>
-      </div>
-    );
+    return <div className="text-center py-10">Loading cart...</div>;
   }
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
-          <button
-            onClick={() => navigate('/products')}
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Continue Shopping
-          </button>
-        </div>
+      <div className="container mx-auto px-4 py-8 text-center">
+        <ShoppingCartIcon className="h-24 w-24 mx-auto text-gray-400 mb-4" />
+        <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
+        <p className="text-gray-600 mb-6">Looks like you haven't added any items to your cart yet.</p>
+        <button
+          onClick={() => navigate('/products')}
+          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+        >
+          Continue Shopping
+        </button>
       </div>
     );
   }
@@ -193,21 +153,24 @@ const Cart = () => {
             </div>
             <div className="flex justify-between">
               <span>Shipping</span>
-              <span>Free</span>
+              <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Tax (5%)</span>
+              <span>${tax.toFixed(2)}</span>
             </div>
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${grandTotal.toFixed(2)}</span>
               </div>
             </div>
           </div>
           <button
-            onClick={handleCheckout}
-            disabled={checkoutLoading || cartItems.length === 0}
-            className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+            onClick={() => navigate('/checkout')}
+            className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition"
           >
-            {checkoutLoading ? 'Processing...' : 'Proceed to Checkout'}
+            Proceed to Checkout
           </button>
           
           <button

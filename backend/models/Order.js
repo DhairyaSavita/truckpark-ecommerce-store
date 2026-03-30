@@ -27,7 +27,8 @@ const Order = sequelize.define('Order', {
     allowNull: false
   },
   payment_method: {
-    type: DataTypes.STRING
+    type: DataTypes.STRING,
+    defaultValue: 'cod'
   },
   payment_status: {
     type: DataTypes.STRING,
@@ -38,6 +39,10 @@ const Order = sequelize.define('Order', {
   },
   tracking_number: {
     type: DataTypes.STRING
+  },
+  customer_details: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
   }
 }, {
   tableName: 'orders',

@@ -14,6 +14,7 @@ import BecomeSeller from './pages/BecomeSeller';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/Dashboard';
+import Checkout from './pages/Checkout';
 import AdminInventory from './pages/Admin/Inventory';
 import AdminUsers from './pages/Admin/Users';
 import AdminProducts from './pages/Admin/Products';
@@ -59,6 +60,7 @@ function AppRoutes() {
       <Route path="/forum/post/:id" element={<ForumPost />} />
       
       {/* Protected Routes */}
+      <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
       <Route path="/admin/inventory" element={<PrivateRoute adminOnly><AdminInventory /></PrivateRoute>} />
       <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
       <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
