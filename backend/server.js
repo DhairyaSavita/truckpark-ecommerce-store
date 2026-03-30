@@ -20,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Define associations
+// Define associations with correct aliases
 User.hasMany(CartItem, { foreignKey: 'user_id' });
 CartItem.belongsTo(User, { foreignKey: 'user_id' });
 
@@ -28,19 +28,19 @@ Product.hasMany(CartItem, { foreignKey: 'product_id' });
 CartItem.belongsTo(Product, { foreignKey: 'product_id', as: 'Product' });
 
 User.hasMany(Order, { foreignKey: 'user_id' });
-Order.belongsTo(User, { foreignKey: 'user_id' });
+Order.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 
 Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'OrderItems' });
 OrderItem.belongsTo(Order, { foreignKey: 'order_id' });
 
 Product.hasMany(OrderItem, { foreignKey: 'product_id' });
-OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
+OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'Product' });
 
 User.hasMany(Message, { foreignKey: 'user_id' });
 Message.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 
 Category.hasMany(Product, { foreignKey: 'category_id' });
-Product.belongsTo(Category, { foreignKey: 'category_id' });
+Product.belongsTo(Category, { foreignKey: 'category_id', as: 'Category' });
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -51,7 +51,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/admin', require('./routes/admin'));
 
-// Seller routes
+// Seller routes - IMPORTANT: Must be mounted correctly
 app.use('/api/seller/products', require('./routes/seller/products'));
 app.use('/api/seller/orders', require('./routes/seller/orders'));
 app.use('/api/seller/earnings', require('./routes/seller/earnings'));
@@ -81,7 +81,8 @@ const startServer = async () => {
       console.log(`📍 URL: http://localhost:${PORT}`);
       console.log(`🧪 Test: http://localhost:${PORT}/api/test`);
       console.log(`📊 Categories: http://localhost:${PORT}/api/categories`);
-      console.log(`🛍️  Products: http://localhost:${PORT}/api/products\n`);
+      console.log(`🛍️  Products: http://localhost:${PORT}/api/products`);
+      console.log(`👤 Seller Products: http://localhost:${PORT}/api/seller/products\n`);
     });
   } catch (error) {
     console.error('❌ Error starting server:', error.message);

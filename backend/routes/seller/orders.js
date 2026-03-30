@@ -1,40 +1,57 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, isSeller } = require('../../config/auth');
-const SellerOrder = require('../../models/SellerOrder');
+const Order = require('../../models/Order');
 const OrderItem = require('../../models/OrderItem');
 const Product = require('../../models/Product');
+const { verifyToken } = require('../../config/auth');
 
-router.get('/', verifyToken, isSeller, async (req, res) => {
+// Middleware to check if user is seller or admin
+const isSellerOrAdmin = (req, res, next) => {
+  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Seller or admin access required' });
+  }
+  next();
+};
+
+// Get seller's orders
+router.get('/', verifyToken, isSellerOrAdmin, async (req, res) => {
   try {
-    const orders = await SellerOrder.findAll({
-      where: { seller_id: req.user.id },
-      include: [{
-        model: OrderItem,
-        as: 'OrderItems',
-        include: [Product]
-      }],
+    const orders = await Order.findAll({
+      include: [
+        { model: OrderItem, as: 'OrderItems', include: [{ model: Product, as: 'Product' }] },
+        { model: User, as: 'User', attributes: ['id', 'name', 'email'] }
+      ],
       order: [['created_at', 'DESC']]
     });
-    res.json(orders);
+    
+    // Filter orders that contain seller's products
+    const sellerOrders = orders.filter(order => 
+      order.OrderItems.some(item => item.Product?.seller_id === req.user.id)
+    );
+    
+    res.json(sellerOrders);
   } catch (error) {
+    console.error('Error fetching seller orders:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-router.put('/:id/status', verifyToken, isSeller, async (req, res) => {
+// Update order status
+router.put('/:id/status', verifyToken, isSellerOrAdmin, async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await SellerOrder.findOne({
-      where: { id: req.params.id, seller_id: req.user.id }
-    });
+    const order = await Order.findByPk(req.params.id);
+    
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
+    
     order.status = status;
     await order.save();
-    res.json(order);
+    
+    res.json({ success: true, message: 'Order status updated', order });
   } catch (error) {
+    console.error('Error updating order status:', error);
     res.status(500).json({ error: error.message });
   }
 });

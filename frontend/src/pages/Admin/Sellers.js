@@ -27,7 +27,7 @@ const AdminSellers = () => {
   const approveSeller = async (sellerId) => {
     try {
       await admin.approveSeller(sellerId);
-      toast.success('Seller approved successfully');
+      toast.success('Seller approved successfully! They can now list products.');
       fetchSellers();
       setSelectedSeller(null);
     } catch (error) {
@@ -51,53 +51,62 @@ const AdminSellers = () => {
     }
   };
 
-  const getStatusBadge = (status, isApproved) => {
-    if (isApproved === true) {
+  const getStatusBadge = (seller) => {
+    if (seller.role === 'seller' && seller.is_approved === true) {
       return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Approved</span>;
     }
-    if (isApproved === false) {
+    if (seller.is_approved === false && seller.store_name) {
       return <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold">Rejected</span>;
     }
-    return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Pending</span>;
+    if (seller.store_name && seller.role === 'user' && seller.is_approved === false) {
+      return <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Pending Approval</span>;
+    }
+    if (seller.role === 'seller') {
+      return <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Active Seller</span>;
+    }
+    return <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">User</span>;
   };
 
   if (loading) {
     return <div className="text-center py-10">Loading sellers...</div>;
   }
 
+  const pendingSellers = sellers.filter(s => s.store_name && s.role === 'user' && s.is_approved === false);
+  const approvedSellers = sellers.filter(s => s.role === 'seller' && s.is_approved === true);
+
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Seller Applications</h1>
+      <h1 className="text-3xl font-bold mb-6">Seller Management</h1>
       
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <table className="min-w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applied Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-             </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {sellers.map((seller) => (
-              <tr key={seller.id}>
-                <td className="px-6 py-4 font-medium">{seller.store_name || 'N/A'}</td>
-                <td className="px-6 py-4">{seller.name}</td>
-                <td className="px-6 py-4">{seller.email}</td>
-                <td className="px-6 py-4">{getStatusBadge(seller.role, seller.is_approved)}</td>
-                <td className="px-6 py-4">{new Date(seller.created_at).toLocaleDateString()}</td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => setSelectedSeller(seller)}
-                    className="text-blue-600 hover:text-blue-800 mr-3"
-                  >
-                    <EyeIcon className="h-5 w-5" />
-                  </button>
-                  {seller.is_approved === null && (
-                    <>
+      {/* Pending Applications Section */}
+      {pendingSellers.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-yellow-600">Pending Applications ({pendingSellers.length})</h2>
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="min-w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applied Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {pendingSellers.map((seller) => (
+                  <tr key={seller.id}>
+                    <td className="px-6 py-4 font-medium">{seller.store_name}</td>
+                    <td className="px-6 py-4">{seller.name}</td>
+                    <td className="px-6 py-4">{seller.email}</td>
+                    <td className="px-6 py-4">{new Date(seller.created_at).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => setSelectedSeller(seller)}
+                        className="text-blue-600 hover:text-blue-800 mr-3"
+                      >
+                        <EyeIcon className="h-5 w-5" />
+                      </button>
                       <button
                         onClick={() => approveSeller(seller.id)}
                         className="text-green-600 hover:text-green-800 mr-3"
@@ -110,13 +119,42 @@ const AdminSellers = () => {
                       >
                         <XCircleIcon className="h-5 w-5" />
                       </button>
-                    </>
-                  )}
-                </td>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      
+      {/* Approved Sellers Section */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4 text-green-600">Approved Sellers ({approvedSellers.length})</h2>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Store Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Sales</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {approvedSellers.map((seller) => (
+                <tr key={seller.id}>
+                  <td className="px-6 py-4 font-medium">{seller.store_name}</td>
+                  <td className="px-6 py-4">{seller.name}</td>
+                  <td className="px-6 py-4">{seller.email}</td>
+                  <td className="px-6 py-4">${seller.total_sales || 0}</td>
+                  <td className="px-6 py-4">{new Date(seller.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Seller Details Modal */}
@@ -170,7 +208,7 @@ const AdminSellers = () => {
                 </div>
               )}
               
-              {selectedSeller.is_approved === null && (
+              {selectedSeller.role === 'user' && selectedSeller.is_approved === false && !selectedSeller.rejection_reason && (
                 <div>
                   <h4 className="font-semibold text-gray-700">Rejection Reason (if rejecting)</h4>
                   <textarea
@@ -184,12 +222,10 @@ const AdminSellers = () => {
               )}
             </div>
             
-            {selectedSeller.is_approved === null && (
+            {selectedSeller.role === 'user' && selectedSeller.is_approved === false && !selectedSeller.rejection_reason && (
               <div className="flex justify-end space-x-3 mt-6">
                 <button
-                  onClick={() => {
-                    rejectSeller(selectedSeller.id);
-                  }}
+                  onClick={() => rejectSeller(selectedSeller.id)}
                   className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 >
                   Reject
@@ -203,7 +239,7 @@ const AdminSellers = () => {
               </div>
             )}
             
-            {selectedSeller.is_approved !== null && (
+            {(selectedSeller.role === 'seller' || selectedSeller.rejection_reason) && (
               <div className="flex justify-end mt-6">
                 <button
                   onClick={() => setSelectedSeller(null)}

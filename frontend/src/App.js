@@ -12,6 +12,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Orders from './pages/Orders';
 import BecomeSeller from './pages/BecomeSeller';
+import ForumList from './pages/Forum/ForumList';
+// import AddProduct from './pages/Seller/AddProduct';
+import AddProduct from './pages/Seller/AddProductSimple';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -51,6 +54,7 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/become-seller" element={<PrivateRoute><BecomeSeller /></PrivateRoute>} />
       
+
       {/* Admin Routes */}
       <Route path="/admin" element={<PrivateRoute adminOnly><AdminDashboard /></PrivateRoute>} />
       <Route path="/admin/users" element={<PrivateRoute adminOnly><AdminUsers /></PrivateRoute>} />
@@ -63,6 +67,8 @@ function AppRoutes() {
       <Route path="/seller/products" element={<PrivateRoute sellerOnly><SellerProducts /></PrivateRoute>} />
       <Route path="/seller/orders" element={<PrivateRoute sellerOnly><SellerOrders /></PrivateRoute>} />
       <Route path="/seller/earnings" element={<PrivateRoute sellerOnly><SellerEarnings /></PrivateRoute>} />
+      <Route path="/forum" element={<ForumList />} />
+      <Route path="/seller/products/new" element={<PrivateRoute sellerOnly><AddProduct /></PrivateRoute>} />
     </Routes>
   );
 }

@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
 const User = require('../models/User');
 const Order = require('../models/Order');
-const OrderItem = require('../models/OrderItem');
 const Product = require('../models/Product');
-const Category = require('../models/Category');
 const Message = require('../models/Message');
 const { verifyToken, isAdmin } = require('../config/auth');
 
@@ -14,37 +13,23 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
     const totalUsers = await User.count();
     const totalProducts = await Product.count();
     const totalOrders = await Order.count();
-    const totalCategories = await Category.count();
-    const pendingOrders = await Order.count({ where: { status: 'pending' } });
+    const pendingSellers = await User.count({ 
+      where: { 
+        role: 'user',
+        is_approved: false,
+        store_name: { [Op.not]: null }
+      } 
+    });
+    const pendingProducts = await Product.count({ where: { approval_status: 'pending' } });
     const totalMessages = await Message.count({ where: { status: 'unread' } });
-    
-    // Calculate total revenue
-    const allOrders = await Order.findAll();
-    const totalRevenue = allOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
-    
-    const recentOrders = await Order.findAll({
-      limit: 5,
-      order: [['created_at', 'DESC']],
-      include: [{ model: User, attributes: ['name', 'email'] }]
-    });
-    
-    const recentMessages = await Message.findAll({
-      limit: 5,
-      where: { status: 'unread' },
-      order: [['created_at', 'DESC']],
-      include: [{ model: User, as: 'User', attributes: ['id', 'name', 'email', 'phone'] }]
-    });
     
     res.json({
       totalUsers,
       totalProducts,
       totalOrders,
-      totalCategories,
-      pendingOrders,
-      totalMessages,
-      totalRevenue,
-      recentOrders,
-      recentMessages
+      pendingSellers,
+      pendingProducts,
+      totalMessages
     });
   } catch (error) {
     console.error('Error fetching stats:', error);
@@ -52,38 +37,95 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
-// Get all messages (admin)
-router.get('/messages', verifyToken, isAdmin, async (req, res) => {
+// Get all sellers (including pending)
+router.get('/sellers', verifyToken, isAdmin, async (req, res) => {
   try {
-    const messages = await Message.findAll({
-      include: [{ 
-        model: User, 
-        as: 'User', 
-        attributes: ['id', 'name', 'email', 'phone'] 
-      }],
+    const sellers = await User.findAll({
+      where: { 
+        [Op.or]: [
+          { role: 'seller' },
+          { 
+            role: 'user',
+            store_name: { [Op.not]: null }
+          }
+        ]
+      },
+      attributes: { exclude: ['password'] },
       order: [['created_at', 'DESC']]
     });
-    console.log(`📬 Admin fetched ${messages.length} messages`);
-    res.json(messages);
+    res.json(sellers);
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    console.error('Error fetching sellers:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Get all orders (admin)
-router.get('/orders', verifyToken, isAdmin, async (req, res) => {
+// Get pending seller applications
+router.get('/sellers/pending', verifyToken, isAdmin, async (req, res) => {
   try {
-    const orders = await Order.findAll({
-      include: [
-        { model: User, attributes: ['id', 'name', 'email'] },
-        { model: OrderItem, as: 'OrderItems', include: [Product] }
-      ],
+    const pendingSellers = await User.findAll({
+      where: { 
+        role: 'user',
+        is_approved: false,
+        store_name: { [Op.not]: null }
+      },
+      attributes: { exclude: ['password'] },
       order: [['created_at', 'DESC']]
     });
-    res.json(orders);
+    res.json(pendingSellers);
   } catch (error) {
-    console.error('Error fetching orders:', error);
+    console.error('Error fetching pending sellers:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Approve seller
+router.put('/sellers/:id/approve', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const seller = await User.findByPk(req.params.id);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+    
+    seller.role = 'seller';
+    seller.is_approved = true;
+    await seller.save();
+    
+    console.log(`✅ Seller approved: ${seller.name} (${seller.email})`);
+    
+    res.json({ 
+      success: true,
+      message: 'Seller approved successfully',
+      seller: { id: seller.id, name: seller.name, email: seller.email, role: seller.role }
+    });
+  } catch (error) {
+    console.error('Error approving seller:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject seller
+router.put('/sellers/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const seller = await User.findByPk(req.params.id);
+    if (!seller) {
+      return res.status(404).json({ error: 'Seller not found' });
+    }
+    
+    seller.is_approved = false;
+    seller.rejection_reason = reason || 'Application did not meet requirements';
+    await seller.save();
+    
+    console.log(`❌ Seller rejected: ${seller.name} (${seller.email})`);
+    
+    res.json({ 
+      success: true,
+      message: 'Seller rejected',
+      seller: { id: seller.id, name: seller.name, email: seller.email, status: 'rejected' }
+    });
+  } catch (error) {
+    console.error('Error rejecting seller:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -92,7 +134,8 @@ router.get('/orders', verifyToken, isAdmin, async (req, res) => {
 router.get('/users', verifyToken, isAdmin, async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ['password'] }
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
     });
     res.json(users);
   } catch (error) {
@@ -113,7 +156,7 @@ router.put('/users/:id/role', verifyToken, isAdmin, async (req, res) => {
     
     user.role = role;
     await user.save();
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+    res.json({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (error) {
     console.error('Error updating user role:', error);
     res.status(500).json({ error: error.message });
@@ -129,82 +172,25 @@ router.delete('/users/:id', verifyToken, isAdmin, async (req, res) => {
     }
     
     await user.destroy();
-    res.json({ message: 'User deleted successfully' });
+    res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// Get all messages
+router.get('/messages', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const messages = await Message.findAll({
+      include: [{ model: User, as: 'User', attributes: ['id', 'name', 'email'] }],
+      order: [['created_at', 'DESC']]
+    });
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
-
-// Get all sellers (pending and approved)
-router.get('/sellers', verifyToken, isAdmin, async (req, res) => {
-  try {
-    const sellers = await User.findAll({
-      where: { role: 'seller' },
-      attributes: { exclude: ['password'] }
-    });
-    res.json(sellers);
-  } catch (error) {
-    console.error('Error fetching sellers:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Approve seller
-router.put('/sellers/:id/approve', verifyToken, isAdmin, async (req, res) => {
-  try {
-    const seller = await User.findByPk(req.params.id);
-    if (!seller) {
-      return res.status(404).json({ error: 'Seller not found' });
-    }
-    
-    seller.is_approved = true;
-    seller.role = 'seller';
-    await seller.save();
-    
-    // Create notification for seller
-    const Notification = require('../models/Notification');
-    await Notification.create({
-      user_id: seller.id,
-      title: 'Seller Application Approved!',
-      message: 'Congratulations! Your seller application has been approved. You can now start listing products.',
-      type: 'system'
-    });
-    
-    res.json({ message: 'Seller approved successfully', seller });
-  } catch (error) {
-    console.error('Error approving seller:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Reject seller
-router.put('/sellers/:id/reject', verifyToken, isAdmin, async (req, res) => {
-  try {
-    const { reason } = req.body;
-    const seller = await User.findByPk(req.params.id);
-    if (!seller) {
-      return res.status(404).json({ error: 'Seller not found' });
-    }
-    
-    seller.is_approved = false;
-    seller.rejection_reason = reason;
-    await seller.save();
-    
-    // Create notification for seller
-    const Notification = require('../models/Notification');
-    await Notification.create({
-      user_id: seller.id,
-      title: 'Seller Application Status',
-      message: `Your seller application has been reviewed. Reason: ${reason}`,
-      type: 'system'
-    });
-    
-    res.json({ message: 'Seller rejected', seller });
-  } catch (error) {
-    console.error('Error rejecting seller:', error);
-    res.status(500).json({ error: error.message });
-  }
-});

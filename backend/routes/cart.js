@@ -9,13 +9,8 @@ router.get('/', verifyToken, async (req, res) => {
   try {
     const cartItems = await CartItem.findAll({
       where: { user_id: req.user.id },
-      include: [{
-        model: Product,
-        as: 'Product',
-        attributes: ['id', 'name', 'price', 'image_url', 'stock_quantity']
-      }]
+      include: [{ model: Product, as: 'Product' }]
     });
-    
     res.json(cartItems);
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -57,11 +52,7 @@ router.post('/', verifyToken, async (req, res) => {
     
     // Fetch the updated cart item with product details
     const updatedCartItem = await CartItem.findByPk(cartItem.id, {
-      include: [{
-        model: Product,
-        as: 'Product',
-        attributes: ['id', 'name', 'price', 'image_url']
-      }]
+      include: [{ model: Product, as: 'Product' }]
     });
     
     res.status(201).json(updatedCartItem);
@@ -90,11 +81,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     await cartItem.save();
     
     const updatedCartItem = await CartItem.findByPk(cartItem.id, {
-      include: [{
-        model: Product,
-        as: 'Product',
-        attributes: ['id', 'name', 'price', 'image_url']
-      }]
+      include: [{ model: Product, as: 'Product' }]
     });
     
     res.json(updatedCartItem);

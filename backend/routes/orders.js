@@ -11,10 +11,10 @@ router.post('/', verifyToken, async (req, res) => {
   try {
     const { shipping_address, payment_method } = req.body;
     
-    // Get cart items
+    // Get cart items with product association using 'as'
     const cartItems = await CartItem.findAll({
       where: { user_id: req.user.id },
-      include: [Product]
+      include: [{ model: Product, as: 'Product' }]
     });
     
     if (cartItems.length === 0) {
@@ -24,12 +24,14 @@ router.post('/', verifyToken, async (req, res) => {
     // Calculate total and prepare order items
     let totalAmount = 0;
     const orderItems = cartItems.map(item => {
-      const subtotal = item.Product.price * item.quantity;
+      const productPrice = parseFloat(item.Product?.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      const subtotal = productPrice * quantity;
       totalAmount += subtotal;
       return {
         product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.Product.price
+        quantity: quantity,
+        price: productPrice
       };
     });
     
@@ -38,7 +40,7 @@ router.post('/', verifyToken, async (req, res) => {
       user_id: req.user.id,
       total_amount: totalAmount,
       shipping_address,
-      payment_method,
+      payment_method: payment_method || 'cash_on_delivery',
       status: 'pending'
     });
     
@@ -55,7 +57,11 @@ router.post('/', verifyToken, async (req, res) => {
     // Clear cart
     await CartItem.destroy({ where: { user_id: req.user.id } });
     
-    res.status(201).json(order);
+    res.status(201).json({
+      success: true,
+      message: 'Order placed successfully',
+      order: order
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     res.status(500).json({ error: error.message });
@@ -70,7 +76,7 @@ router.get('/my-orders', verifyToken, async (req, res) => {
       include: [{
         model: OrderItem,
         as: 'OrderItems',
-        include: [Product]
+        include: [{ model: Product, as: 'Product' }]
       }],
       order: [['created_at', 'DESC']]
     });
@@ -86,7 +92,8 @@ router.get('/', verifyToken, isAdmin, async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [
-        { model: OrderItem, as: 'OrderItems', include: [Product] }
+        { model: User, as: 'User', attributes: ['id', 'name', 'email'] },
+        { model: OrderItem, as: 'OrderItems', include: [{ model: Product, as: 'Product' }] }
       ],
       order: [['created_at', 'DESC']]
     });
@@ -111,7 +118,11 @@ router.put('/:id/status', verifyToken, isAdmin, async (req, res) => {
     if (tracking_number) order.tracking_number = tracking_number;
     await order.save();
     
-    res.json(order);
+    res.json({
+      success: true,
+      message: 'Order status updated',
+      order: order
+    });
   } catch (error) {
     console.error('Error updating order:', error);
     res.status(500).json({ error: error.message });
@@ -125,7 +136,7 @@ router.get('/:id', verifyToken, async (req, res) => {
       include: [{
         model: OrderItem,
         as: 'OrderItems',
-        include: [Product]
+        include: [{ model: Product, as: 'Product' }]
       }]
     });
     

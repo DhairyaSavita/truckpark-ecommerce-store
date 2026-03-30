@@ -46,20 +46,13 @@ export const orders = {
   getById: (id) => api.get(`/orders/${id}`),
 };
 
-// Wishlist endpoints
-export const wishlist = {
-  get: () => api.get('/wishlist'),
-  add: (productId) => api.post('/wishlist', { product_id: productId }),
-  remove: (id) => api.delete(`/wishlist/${id}`),
-};
-
 // Review endpoints
-export const reviews = {
+export const productReviews = {
   getByProduct: (productId) => api.get(`/reviews/product/${productId}`),
   add: (data) => api.post('/reviews', data),
 };
 
-// Seller endpoints
+// Seller endpoints - FIXED
 export const sellerAPI = {
   getDashboard: () => api.get('/seller/dashboard'),
   getProducts: () => api.get('/seller/products'),
@@ -94,6 +87,14 @@ export const messages = {
   getMyMessages: () => api.get('/messages/my-messages'),
   markRead: (id) => api.put(`/messages/${id}/read`),
   delete: (id) => api.delete(`/messages/${id}`),
+};
+
+// Forum endpoints
+export const forumAPI = {
+  getPosts: () => api.get('/forum/posts'),
+  getPost: (id) => api.get(`/forum/posts/${id}`),
+  createPost: (data) => api.post('/forum/posts', data),
+  addComment: (postId, content) => api.post(`/forum/posts/${postId}/comments`, { content }),
 };
 
 export default api;

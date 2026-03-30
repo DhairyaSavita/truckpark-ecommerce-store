@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { products, cart } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import EnquiryForm from '../components/EnquiryForm';
+import Reviews from '../components/Reviews';
 import toast from 'react-hot-toast';
 import { ShoppingCartIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
@@ -90,6 +90,9 @@ const ProductDetails = () => {
             src={product.image_url || 'https://via.placeholder.com/600x400?text=Truck+Part'}
             alt={product.name}
             className="w-full h-96 object-cover"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/600x400?text=No+Image';
+            }}
           />
         </div>
         
@@ -118,7 +121,7 @@ const ProductDetails = () => {
             <p className="text-gray-600">{product.description}</p>
           </div>
           
-          {product.specifications && (
+          {product.specifications && Object.keys(product.specifications).length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-2">Specifications</h3>
               <div className="bg-gray-50 rounded-lg p-4">
@@ -172,10 +175,8 @@ const ProductDetails = () => {
         </div>
       </div>
       
-      {/* Enquiry Section */}
-      <div className="mt-8">
-        <EnquiryForm productName={product.name} productId={product.id} />
-      </div>
+      {/* Reviews Section */}
+      <Reviews productId={product.id} />
     </div>
   );
 };

@@ -27,14 +27,14 @@ const verifyToken = (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 };
 
 const isSeller = (req, res, next) => {
-  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+  if (req.user?.role !== 'seller' && req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Seller access required' });
   }
   next();

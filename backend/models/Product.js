@@ -12,7 +12,8 @@ const Product = sequelize.define('Product', {
     allowNull: false
   },
   description: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
+    allowNull: false
   },
   price: {
     type: DataTypes.DECIMAL(10, 2),
@@ -20,37 +21,40 @@ const Product = sequelize.define('Product', {
   },
   stock_quantity: {
     type: DataTypes.INTEGER,
+    allowNull: false,
     defaultValue: 0
   },
   category_id: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
+    allowNull: false
   },
   seller_id: {
     type: DataTypes.INTEGER,
-    allowNull: true,  // Temporarily allow NULL
-    defaultValue: 1
-  },
-  image_url: {
-    type: DataTypes.TEXT
+    allowNull: false
   },
   brand: {
     type: DataTypes.STRING
   },
   part_number: {
-    type: DataTypes.STRING,
-    unique: true
+    type: DataTypes.STRING
+  },
+  image_url: {
+    type: DataTypes.STRING
   },
   specifications: {
     type: DataTypes.JSONB,
     defaultValue: {}
   },
-  is_approved: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true  // Auto-approve for now
-  },
   approval_status: {
     type: DataTypes.STRING,
-    defaultValue: 'approved'
+    defaultValue: 'pending',
+    validate: {
+      isIn: [['pending', 'approved', 'rejected']]
+    }
+  },
+  is_approved: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   rejection_reason: {
     type: DataTypes.TEXT
