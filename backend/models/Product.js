@@ -30,7 +30,8 @@ const Product = sequelize.define('Product', {
   },
   seller_id: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true,  // Make optional for admin-added products
+    defaultValue: 1   // Default to admin user
   },
   brand: {
     type: DataTypes.STRING
@@ -47,14 +48,14 @@ const Product = sequelize.define('Product', {
   },
   approval_status: {
     type: DataTypes.STRING,
-    defaultValue: 'pending',
+    defaultValue: 'approved',  // Auto-approve for admin products
     validate: {
       isIn: [['pending', 'approved', 'rejected']]
     }
   },
   is_approved: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: true
   },
   rejection_reason: {
     type: DataTypes.TEXT
