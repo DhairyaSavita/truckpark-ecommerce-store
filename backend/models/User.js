@@ -28,7 +28,14 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     defaultValue: 'user',
     validate: {
-      isIn: [['user', 'admin', 'seller']]
+      isIn: [['user', 'seller', 'admin']]
+    }
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'active',
+    validate: {
+      isIn: [['active', 'blocked']]
     }
   },
   phone: {

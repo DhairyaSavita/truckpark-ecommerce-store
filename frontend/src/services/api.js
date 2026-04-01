@@ -82,10 +82,30 @@ export const sellerAPI = {
   getEarnings: () => api.get('/seller/earnings'),
 };
 
-// Admin endpoints
+// // Admin endpoints
+// export const admin = {
+//   getStats: () => api.get('/admin/stats'),
+//   getUsers: () => api.get('/admin/users'),
+//   getSellers: () => api.get('/admin/sellers'),
+//   approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
+//   rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
+//   getPendingProducts: () => api.get('/admin/products/pending'),
+//   approveProduct: (id) => api.put(`/admin/products/${id}/approve`),
+//   rejectProduct: (id, reason) => api.put(`/admin/products/${id}/reject`, { reason }),
+//   getAllOrders: () => api.get('/admin/orders'),
+//   getAllMessages: () => api.get('/admin/messages'),
+//   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+//   deleteUser: (id) => api.delete(`/admin/users/${id}`),
+// };
+
+// Add to admin object
 export const admin = {
   getStats: () => api.get('/admin/stats'),
   getUsers: () => api.get('/admin/users'),
+  createUser: (data) => api.post('/admin/users', data),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  blockUser: (id, block) => api.put(`/admin/users/${id}/block`, { block }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
   getSellers: () => api.get('/admin/sellers'),
   approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
   rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
@@ -94,8 +114,7 @@ export const admin = {
   rejectProduct: (id, reason) => api.put(`/admin/products/${id}/reject`, { reason }),
   getAllOrders: () => api.get('/admin/orders'),
   getAllMessages: () => api.get('/admin/messages'),
-  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
-  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getAllProducts: () => api.get('/admin/products'),
 };
 
 // Message endpoints
