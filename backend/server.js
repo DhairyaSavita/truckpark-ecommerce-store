@@ -25,7 +25,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Define associations - SINGLE DEFINITION ONLY
+// ============ ASSOCIATIONS (Define once only) ============
+
 // Cart associations
 User.hasMany(CartItem, { foreignKey: 'user_id' });
 CartItem.belongsTo(User, { foreignKey: 'user_id' });
@@ -72,7 +73,7 @@ User.hasMany(B2BQuote, { foreignKey: 'user_id' });
 B2BQuote.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 B2BQuote.belongsTo(Product, { foreignKey: 'product_id', as: 'Product' });
 
-// Routes
+// ============ ROUTES ============
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));

@@ -224,9 +224,13 @@ const Navbar = () => {
                   Register
                 </Link>
                 <Link to="/wishlist" className="flex items-center px-4 py-2 hover:bg-gray-100">
-  <HeartIcon className="h-5 w-5 mr-3 text-red-500" />
-  <span>My Wishlist</span>
-</Link>
+                <HeartIcon className="h-5 w-5 mr-3 text-red-500" />
+                <span>My Wishlist</span>
+                </Link>
+                <Link to="/admin/support-tickets" className="flex items-center px-4 py-2 hover:bg-gray-100">
+                <TicketIcon className="h-5 w-5 mr-3 text-purple-500" />
+                <span>Support Tickets</span>
+                </Link>
               </>
             )}
           </div>

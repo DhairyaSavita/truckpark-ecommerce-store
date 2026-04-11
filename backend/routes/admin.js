@@ -7,6 +7,7 @@ const OrderItem = require('../models/OrderItem');
 const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Message = require('../models/Message');
+const SupportTicket = require('../models/SupportTicket');
 const { verifyToken, isAdmin } = require('../config/auth');
 
 // Get dashboard stats
@@ -25,6 +26,7 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
       } 
     });
     const lowStockProducts = await Product.count({ where: { stock_quantity: { [Op.lt]: 10 } } });
+    const urgentTickets = await SupportTicket.count({ where: { priority: 'urgent', status: ['open', 'in_progress'] } });
     
     const allOrders = await Order.findAll();
     const totalRevenue = allOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
@@ -50,6 +52,7 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
       pendingSellers,
       lowStockProducts,
       totalRevenue,
+      urgentTickets,
       recentOrders,
       recentUsers
     });
@@ -72,6 +75,87 @@ router.get('/users', verifyToken, isAdmin, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ============ SUPPORT TICKETS ADMIN ENDPOINTS ============
+
+// Get ALL support tickets (admin) - FIXED
+router.get('/support-tickets', verifyToken, isAdmin, async (req, res) => {
+  try {
+    console.log('=== ADMIN FETCHING ALL TICKETS ===');
+    
+    const tickets = await SupportTicket.findAll({
+      include: [{ model: User, as: 'User', attributes: ['id', 'name', 'email', 'phone'] }],
+      order: [['created_at', 'DESC']]
+    });
+    
+    console.log(`✅ Admin found ${tickets.length} tickets`);
+    res.json(tickets);
+  } catch (error) {
+    console.error('Error fetching admin tickets:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get urgent tickets (admin)
+router.get('/support-tickets/urgent', verifyToken, isAdmin, async (req, res) => {
+  try {
+    console.log('=== ADMIN FETCHING URGENT TICKETS ===');
+    
+    const tickets = await SupportTicket.findAll({
+      where: { priority: 'urgent', status: ['open', 'in_progress'] },
+      include: [{ model: User, as: 'User', attributes: ['id', 'name', 'email', 'phone'] }],
+      order: [['created_at', 'DESC']]
+    });
+    
+    console.log(`✅ Admin found ${tickets.length} urgent tickets`);
+    res.json(tickets);
+  } catch (error) {
+    console.error('Error fetching urgent tickets:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update support ticket (admin)
+router.put('/support-tickets/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { status, resolution, priority } = req.body;
+    const ticket = await SupportTicket.findByPk(req.params.id);
+    
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    
+    if (status) ticket.status = status;
+    if (resolution) ticket.resolution = resolution;
+    if (priority) ticket.priority = priority;
+    await ticket.save();
+    
+    console.log(`✅ Ticket ${ticket.id} updated: status=${status}, priority=${priority}`);
+    
+    res.json({ success: true, message: 'Ticket updated successfully', ticket });
+  } catch (error) {
+    console.error('Error updating ticket:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete support ticket (admin)
+router.delete('/support-tickets/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findByPk(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+    
+    await ticket.destroy();
+    res.json({ success: true, message: 'Ticket deleted' });
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ END SUPPORT TICKETS ============
 
 // Create user
 router.post('/users', verifyToken, isAdmin, async (req, res) => {

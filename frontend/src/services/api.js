@@ -6,31 +6,13 @@ const api = axios.create({
   baseURL: API_URL,
 });
 
-// Add token to every request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    console.log('Token being sent:', token ? 'Present' : 'Missing');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
-
-// Response interceptor for debugging
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.error('API Error:', error.response?.status, error.response?.data);
-    return Promise.reject(error);
-  }
-);
+  return config;
+});
 
 // Auth endpoints
 export const auth = {
@@ -82,23 +64,7 @@ export const sellerAPI = {
   getEarnings: () => api.get('/seller/earnings'),
 };
 
-// // Admin endpoints
-// export const admin = {
-//   getStats: () => api.get('/admin/stats'),
-//   getUsers: () => api.get('/admin/users'),
-//   getSellers: () => api.get('/admin/sellers'),
-//   approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
-//   rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
-//   getPendingProducts: () => api.get('/admin/products/pending'),
-//   approveProduct: (id) => api.put(`/admin/products/${id}/approve`),
-//   rejectProduct: (id, reason) => api.put(`/admin/products/${id}/reject`, { reason }),
-//   getAllOrders: () => api.get('/admin/orders'),
-//   getAllMessages: () => api.get('/admin/messages'),
-//   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
-//   deleteUser: (id) => api.delete(`/admin/users/${id}`),
-// };
-
-// Add to admin object
+// Admin endpoints
 export const admin = {
   getStats: () => api.get('/admin/stats'),
   getUsers: () => api.get('/admin/users'),
@@ -109,12 +75,13 @@ export const admin = {
   getSellers: () => api.get('/admin/sellers'),
   approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
   rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
-  getPendingProducts: () => api.get('/admin/products/pending'),
-  approveProduct: (id) => api.put(`/admin/products/${id}/approve`),
-  rejectProduct: (id, reason) => api.put(`/admin/products/${id}/reject`, { reason }),
   getAllOrders: () => api.get('/admin/orders'),
   getAllMessages: () => api.get('/admin/messages'),
   getAllProducts: () => api.get('/admin/products'),
+  getSupportTickets: () => api.get('/admin/support-tickets'),
+  getUrgentTickets: () => api.get('/admin/support-tickets/urgent'),
+  updateSupportTicket: (id, data) => api.put(`/admin/support-tickets/${id}`, data),
+  deleteSupportTicket: (id) => api.delete(`/admin/support-tickets/${id}`),
 };
 
 // Message endpoints
@@ -134,6 +101,9 @@ export const forumAPI = {
   likePost: (id) => api.post(`/forum/posts/${id}/like`),
   addComment: (postId, content) => api.post(`/forum/posts/${postId}/comments`, { content }),
   likeComment: (id) => api.post(`/forum/comments/${id}/like`),
+  getConversations: () => api.get('/forum/messages/conversations'),
+  sendMessage: (data) => api.post('/forum/messages', data),
+  getMessages: (userId) => api.get(`/forum/messages/${userId}`),
 };
 
 // Chatbot endpoints
@@ -143,68 +113,11 @@ export const chatbotAPI = {
   clearHistory: () => api.delete('/chatbot/history'),
 };
 
-// // Booking API
-// export const bookingAPI = {
-//   getMechanics: () => api.get('/installations/mechanics'),
-//   createBooking: (data) => api.post('/installations', data),
-//   getMyBookings: () => api.get('/installations/my-bookings'),
-//   updateBookingStatus: (id, status) => api.put(`/installations/${id}/status`, { status })
-// };
-
-// Vendor API
-export const vendorAPI = {
-  getDashboard: () => api.get('/vendor/dashboard'),
-  bulkUpload: (data) => api.post('/vendor/bulk-upload', data),
-  getPayouts: () => api.get('/vendor/payouts')
-};
-
 // Support API
 export const supportAPI = {
   createTicket: (data) => api.post('/support/tickets', data),
   getMyTickets: () => api.get('/support/tickets/my-tickets'),
-  getAllTickets: () => api.get('/support/tickets'),
   getTicket: (id) => api.get(`/support/tickets/${id}`),
-  updateTicket: (id, data) => api.put(`/support/tickets/${id}`, data),
-  deleteTicket: (id) => api.delete(`/support/tickets/${id}`),
-};
-
-// Installation Booking API
-export const bookingAPI = {
-  getMechanics: () => api.get('/installations/mechanics'),
-  createBooking: (data) => api.post('/installations', data),
-  getMyBookings: () => api.get('/installations/my-bookings'),
-  getBooking: (id) => api.get(`/installations/${id}`),
-  updateBookingStatus: (id, status) => api.put(`/installations/${id}/status`, { status }),
-  cancelBooking: (id) => api.put(`/installations/${id}/cancel`),
-  deleteBooking: (id) => api.delete(`/installations/${id}`),
-};
-
-// // Wishlist API
-// export const wishlistAPI = {
-//   getWishlist: () => api.get('/wishlist'),
-//   add: (productId) => api.post('/wishlist', { product_id: productId }),
-//   remove: (productId) => api.delete(`/wishlist/${productId}`),
-//   check: (productId) => api.get(`/wishlist/check/${productId}`)
-// };
-
-// // Price Alert API
-// export const priceAlertAPI = {
-//   getAlerts: () => api.get('/price-alerts'),
-//   create: (data) => api.post('/price-alerts', data),
-//   remove: (id) => api.delete(`/price-alerts/${id}`)
-// };
-
-// B2B API
-export const b2bAPI = {
-  requestQuote: (data) => api.post('/b2b/quotes', data),
-  getMyQuotes: () => api.get('/b2b/quotes/my-quotes'),
-  respondToQuote: (id, data) => api.put(`/b2b/quotes/${id}/respond`, data)
-};
-
-// Compatibility API
-export const compatibilityAPI = {
-  check: (productId, vehicleData) => api.post(`/compatibility/check/${productId}`, vehicleData),
-  getCompatibleProducts: (vehicleData) => api.post('/compatibility/products', vehicleData)
 };
 
 // Wishlist API
@@ -223,5 +136,36 @@ export const priceAlertAPI = {
   checkDrops: () => api.post('/price-alerts/check-drops'),
 };
 
+// B2B API
+export const b2bAPI = {
+  requestQuote: (data) => api.post('/b2b/quotes', data),
+  getMyQuotes: () => api.get('/b2b/my-quotes'),
+  respondToQuote: (id, data) => api.put(`/b2b/quotes/${id}/respond`, data),
+};
+
+// Compatibility API
+export const compatibilityAPI = {
+  check: (productId, vehicleData) => api.post(`/compatibility/check/${productId}`, vehicleData),
+  getCompatibleProducts: (vehicleData) => api.post('/compatibility/products', vehicleData),
+};
+
+// Booking API
+export const bookingAPI = {
+  getMechanics: () => api.get('/installations/mechanics'),
+  createBooking: (data) => api.post('/installations', data),
+  getMyBookings: () => api.get('/installations/my-bookings'),
+  getBooking: (id) => api.get(`/installations/${id}`),
+  updateBookingStatus: (id, status) => api.put(`/installations/${id}/status`, { status }),
+  cancelBooking: (id) => api.put(`/installations/${id}/cancel`),
+  deleteBooking: (id) => api.delete(`/installations/${id}`),
+};
+
+// Admin Support API (using admin endpoints)
+export const adminSupportAPI = {
+  getAllTickets: () => admin.getSupportTickets(),
+  getUrgentTickets: () => admin.getUrgentTickets(),
+  updateTicket: (id, data) => admin.updateSupportTicket(id, data),
+  deleteTicket: (id) => admin.deleteSupportTicket(id),
+};
 
 export default api;

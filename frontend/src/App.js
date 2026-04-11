@@ -13,6 +13,11 @@ import Orders from './pages/Orders';
 import BecomeSeller from './pages/BecomeSeller';
 import Checkout from './pages/Checkout';
 import Chatbot from './components/Chatbot';
+import WishlistPage from './pages/WishlistPage';
+import SupportTicketsPage from './pages/SupportTicketsPage';
+import CompatibilityPage from './pages/CompatibilityPage';
+import B2BQuotesPage from './pages/B2BQuotesPage';
+import InstallationsPage from './pages/InstallationsPage';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/Dashboard';
@@ -22,6 +27,7 @@ import AdminOrders from './pages/Admin/Orders';
 import AdminMessages from './pages/Admin/Messages';
 import AdminSellers from './pages/Admin/Sellers';
 import AdminInventory from './pages/Admin/Inventory';
+import AdminSupportTickets from './pages/Admin/AdminSupportTickets';
 
 // Seller imports
 import SellerDashboard from './pages/Seller/Dashboard';
@@ -33,18 +39,6 @@ import AddProductSimple from './pages/Seller/AddProductSimple';
 // Forum imports
 import ForumList from './pages/Forum/ForumList';
 import ForumPost from './pages/Forum/ForumPost';
-
-import WishlistPage from './pages/WishlistPage';
-import SupportTicketsPage from './pages/SupportTicketsPage';
-import CompatibilityPage from './pages/CompatibilityPage';
-import B2BQuotesPage from './pages/B2BQuotesPage';
-import InstallationsPage from './pages/InstallationsPage';
-
-// import SupportTicketsPage from './pages/SupportTicketsPage';
-// import InstallationsPage from './pages/InstallationsPage';
-
-// import WishlistPage from './pages/WishlistPage';
-
 
 const PrivateRoute = ({ children, adminOnly = false, sellerOnly = false }) => {
   const { user, loading } = useAuth();
@@ -73,8 +67,6 @@ function AppRoutes() {
       <Route path="/forum/post/:id" element={<ForumPost />} />
       
       {/* Protected Routes */}
-      <Route path="/support/tickets" element={<PrivateRoute><SupportTicketsPage /></PrivateRoute>} />
-<Route path="/installations" element={<PrivateRoute><InstallationsPage /></PrivateRoute>} />
       <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
       <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
       <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
@@ -93,6 +85,7 @@ function AppRoutes() {
       <Route path="/admin/messages" element={<PrivateRoute adminOnly><AdminMessages /></PrivateRoute>} />
       <Route path="/admin/sellers" element={<PrivateRoute adminOnly><AdminSellers /></PrivateRoute>} />
       <Route path="/admin/inventory" element={<PrivateRoute adminOnly><AdminInventory /></PrivateRoute>} />
+      <Route path="/admin/support-tickets" element={<PrivateRoute adminOnly><AdminSupportTickets /></PrivateRoute>} />
       
       {/* Seller Routes */}
       <Route path="/seller" element={<PrivateRoute sellerOnly><SellerDashboard /></PrivateRoute>} />
@@ -100,11 +93,7 @@ function AppRoutes() {
       <Route path="/seller/products/new" element={<PrivateRoute sellerOnly><AddProductSimple /></PrivateRoute>} />
       <Route path="/seller/orders" element={<PrivateRoute sellerOnly><SellerOrders /></PrivateRoute>} />
       <Route path="/seller/earnings" element={<PrivateRoute sellerOnly><SellerEarnings /></PrivateRoute>} />
-      <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
-
     </Routes>
-
-    
   );
 }
 
