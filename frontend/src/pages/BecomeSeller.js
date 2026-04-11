@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../services/api';
+import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -25,7 +25,7 @@ const BecomeSeller = () => {
     setLoading(true);
     
     try {
-      await auth.becomeSeller(formData);
+      await authAPI.becomeSeller(formData);
       toast.success('Seller application submitted! Admin will review it.');
       navigate('/');
     } catch (error) {

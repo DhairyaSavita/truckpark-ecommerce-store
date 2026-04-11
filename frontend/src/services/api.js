@@ -14,12 +14,22 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth endpoints
-export const auth = {
-  register: (data) => api.post('/auth/register', data),
+// Auth API with 2FA
+export const authAPI = {
   login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
   getMe: () => api.get('/auth/me'),
   becomeSeller: (data) => api.post('/auth/become-seller', data),
+  setup2FA: () => api.post('/auth/setup-2fa'),
+  verify2FA: (token) => api.post('/auth/verify-2fa', { token }),
+  disable2FA: (data) => api.post('/auth/disable-2fa', data),
+  get2FAStatus: () => api.get('/auth/2fa-status'),
+  generateBackupCodes: (data) => api.post('/auth/generate-backup-codes', data),
+  verify2FALogin: (data) => api.post('/auth/verify-2fa-login', data),
+  logout: () => api.post('/auth/logout'),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, password) => api.post(`/auth/reset-password/${token}`, { password }),
 };
 
 // Product endpoints
@@ -160,7 +170,7 @@ export const bookingAPI = {
   deleteBooking: (id) => api.delete(`/installations/${id}`),
 };
 
-// Admin Support API (using admin endpoints)
+// Admin Support API
 export const adminSupportAPI = {
   getAllTickets: () => admin.getSupportTickets(),
   getUrgentTickets: () => admin.getUrgentTickets(),

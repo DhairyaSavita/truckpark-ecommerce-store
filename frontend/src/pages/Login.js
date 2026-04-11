@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { authAPI } from '../services/api';
+import TwoFactorModal from '../components/TwoFactorModal';
 import toast from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -14,14 +18,30 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
-      toast.success('Login successful!');
-      navigate('/');
+      const response = await authAPI.login({ email, password });
+      
+      if (response.data.requiresTwoFactor) {
+        setPendingUserId(response.data.userId);
+        setShow2FAModal(true);
+      } else {
+        localStorage.setItem('token', response.data.token);
+        await login(email, password);
+        toast.success('Login successful!');
+        navigate('/');
+      }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handle2FASuccess = async (userData) => {
+    setShow2FAModal(false);
+    // Update auth context with user data
+    await login(email, password);
+    toast.success('Login successful!');
+    navigate('/');
   };
 
   return (
@@ -63,7 +83,20 @@ const Login = () => {
             Register
           </Link>
         </p>
+        <p className="mt-2 text-center text-sm">
+          <Link to="/forgot-password" className="text-gray-500 hover:text-gray-700">
+            Forgot Password?
+          </Link>
+        </p>
       </div>
+
+      {show2FAModal && (
+        <TwoFactorModal
+          userId={pendingUserId}
+          onSuccess={handle2FASuccess}
+          onCancel={() => setShow2FAModal(false)}
+        />
+      )}
     </div>
   );
 };

@@ -15,7 +15,8 @@ import {
   BellIcon,
   TicketIcon,
   WrenchScrewdriverIcon,
-  TruckIcon
+  TruckIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 
 const Navbar = () => {
@@ -32,7 +33,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="text-2xl font-bold">
-            Mystery Auto Parts
+            TruckParts Marketplace
           </Link>
           
           <div className="flex items-center space-x-6">
@@ -158,6 +159,10 @@ const Navbar = () => {
                           <BuildingStorefrontIcon className="h-5 w-5 mr-3 text-gray-500" />
                           <span>Seller Applications</span>
                         </Link>
+                        <Link to="/admin/support-tickets" className="flex items-center px-4 py-2 hover:bg-gray-100">
+                          <TicketIcon className="h-5 w-5 mr-3 text-purple-500" />
+                          <span>Support Tickets</span>
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -176,6 +181,10 @@ const Navbar = () => {
                         <p className="text-sm font-semibold">{user.name}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
+                      <Link to="/profile" className="flex items-center px-4 py-2 hover:bg-gray-100">
+                        <UserCircleIcon className="h-5 w-5 mr-3 text-gray-500" />
+                        <span>Profile Settings</span>
+                      </Link>
                       <Link to="/orders" className="flex items-center px-4 py-2 hover:bg-gray-100">
                         <ShoppingBagIcon className="h-5 w-5 mr-3 text-gray-500" />
                         <span>My Orders</span>
@@ -222,14 +231,6 @@ const Navbar = () => {
                 </Link>
                 <Link to="/register" className="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">
                   Register
-                </Link>
-                <Link to="/wishlist" className="flex items-center px-4 py-2 hover:bg-gray-100">
-                <HeartIcon className="h-5 w-5 mr-3 text-red-500" />
-                <span>My Wishlist</span>
-                </Link>
-                <Link to="/admin/support-tickets" className="flex items-center px-4 py-2 hover:bg-gray-100">
-                <TicketIcon className="h-5 w-5 mr-3 text-purple-500" />
-                <span>Support Tickets</span>
                 </Link>
               </>
             )}

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { auth } from '../services/api';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await auth.getMe();
+        const response = await authAPI.getMe();
         setUser(response.data);
       } catch (error) {
         localStorage.removeItem('token');
@@ -27,14 +27,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (email, password) => {
-    const response = await auth.login({ email, password });
+    const response = await authAPI.login({ email, password });
     localStorage.setItem('token', response.data.token);
     setUser(response.data.user);
     return response.data;
   };
 
   const register = async (userData) => {
-    const response = await auth.register(userData);
+    const response = await authAPI.register(userData);
     localStorage.setItem('token', response.data.token);
     setUser(response.data.user);
     return response.data;

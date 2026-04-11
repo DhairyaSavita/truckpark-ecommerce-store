@@ -35,7 +35,7 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     defaultValue: 'active',
     validate: {
-      isIn: [['active', 'blocked']]
+      isIn: [['active', 'blocked', 'suspended']]
     }
   },
   phone: {
@@ -43,6 +43,46 @@ const User = sequelize.define('User', {
   },
   address: {
     type: DataTypes.TEXT
+  },
+  // Security fields
+  is_email_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  email_verification_token: {
+    type: DataTypes.STRING
+  },
+  password_reset_token: {
+    type: DataTypes.STRING
+  },
+  password_reset_expires: {
+    type: DataTypes.DATE
+  },
+  last_login: {
+    type: DataTypes.DATE
+  },
+  last_login_ip: {
+    type: DataTypes.STRING
+  },
+  login_attempts: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  lock_until: {
+    type: DataTypes.DATE
+  },
+  // 2FA Fields
+  two_factor_secret: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  two_factor_enabled: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  two_factor_backup_codes: {
+    type: DataTypes.JSONB,
+    defaultValue: []
   },
   // Seller-specific fields
   store_name: {
@@ -89,26 +129,54 @@ const User = sequelize.define('User', {
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
-});
-
-// Hash password before saving
-User.beforeCreate(async (user) => {
-  if (user.password) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-  }
-});
-
-User.beforeUpdate(async (user) => {
-  if (user.changed('password')) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
+  updatedAt: 'updated_at',
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
   }
 });
 
 User.prototype.comparePassword = async function(password) {
   return await bcrypt.compare(password, this.password);
+};
+
+User.prototype.incrementLoginAttempts = async function() {
+  this.login_attempts += 1;
+  if (this.login_attempts >= 5) {
+    this.lock_until = new Date(Date.now() + 30 * 60 * 1000);
+  }
+  await this.save();
+};
+
+User.prototype.resetLoginAttempts = async function() {
+  this.login_attempts = 0;
+  this.lock_until = null;
+  await this.save();
+};
+
+User.prototype.isLocked = function() {
+  return this.lock_until && this.lock_until > new Date();
+};
+
+// Generate backup codes for 2FA
+User.prototype.generateBackupCodes = function() {
+  const codes = [];
+  for (let i = 0; i < 10; i++) {
+    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+    codes.push(code);
+  }
+  this.two_factor_backup_codes = codes;
+  return codes;
 };
 
 module.exports = User;
