@@ -136,4 +136,92 @@ export const forumAPI = {
   likeComment: (id) => api.post(`/forum/comments/${id}/like`),
 };
 
+// Chatbot endpoints
+export const chatbotAPI = {
+  sendMessage: (message) => api.post('/chatbot/message', { message }),
+  getHistory: () => api.get('/chatbot/history'),
+  clearHistory: () => api.delete('/chatbot/history'),
+};
+
+// // Booking API
+// export const bookingAPI = {
+//   getMechanics: () => api.get('/installations/mechanics'),
+//   createBooking: (data) => api.post('/installations', data),
+//   getMyBookings: () => api.get('/installations/my-bookings'),
+//   updateBookingStatus: (id, status) => api.put(`/installations/${id}/status`, { status })
+// };
+
+// Vendor API
+export const vendorAPI = {
+  getDashboard: () => api.get('/vendor/dashboard'),
+  bulkUpload: (data) => api.post('/vendor/bulk-upload', data),
+  getPayouts: () => api.get('/vendor/payouts')
+};
+
+// Support API
+export const supportAPI = {
+  createTicket: (data) => api.post('/support/tickets', data),
+  getMyTickets: () => api.get('/support/tickets/my-tickets'),
+  getAllTickets: () => api.get('/support/tickets'),
+  getTicket: (id) => api.get(`/support/tickets/${id}`),
+  updateTicket: (id, data) => api.put(`/support/tickets/${id}`, data),
+  deleteTicket: (id) => api.delete(`/support/tickets/${id}`),
+};
+
+// Installation Booking API
+export const bookingAPI = {
+  getMechanics: () => api.get('/installations/mechanics'),
+  createBooking: (data) => api.post('/installations', data),
+  getMyBookings: () => api.get('/installations/my-bookings'),
+  getBooking: (id) => api.get(`/installations/${id}`),
+  updateBookingStatus: (id, status) => api.put(`/installations/${id}/status`, { status }),
+  cancelBooking: (id) => api.put(`/installations/${id}/cancel`),
+  deleteBooking: (id) => api.delete(`/installations/${id}`),
+};
+
+// // Wishlist API
+// export const wishlistAPI = {
+//   getWishlist: () => api.get('/wishlist'),
+//   add: (productId) => api.post('/wishlist', { product_id: productId }),
+//   remove: (productId) => api.delete(`/wishlist/${productId}`),
+//   check: (productId) => api.get(`/wishlist/check/${productId}`)
+// };
+
+// // Price Alert API
+// export const priceAlertAPI = {
+//   getAlerts: () => api.get('/price-alerts'),
+//   create: (data) => api.post('/price-alerts', data),
+//   remove: (id) => api.delete(`/price-alerts/${id}`)
+// };
+
+// B2B API
+export const b2bAPI = {
+  requestQuote: (data) => api.post('/b2b/quotes', data),
+  getMyQuotes: () => api.get('/b2b/quotes/my-quotes'),
+  respondToQuote: (id, data) => api.put(`/b2b/quotes/${id}/respond`, data)
+};
+
+// Compatibility API
+export const compatibilityAPI = {
+  check: (productId, vehicleData) => api.post(`/compatibility/check/${productId}`, vehicleData),
+  getCompatibleProducts: (vehicleData) => api.post('/compatibility/products', vehicleData)
+};
+
+// Wishlist API
+export const wishlistAPI = {
+  getWishlist: () => api.get('/wishlist'),
+  add: (productId) => api.post('/wishlist', { product_id: productId }),
+  remove: (productId) => api.delete(`/wishlist/${productId}`),
+  check: (productId) => api.get(`/wishlist/check/${productId}`),
+};
+
+// Price Alert API
+export const priceAlertAPI = {
+  getAlerts: () => api.get('/price-alerts'),
+  create: (data) => api.post('/price-alerts', data),
+  remove: (id) => api.delete(`/price-alerts/${id}`),
+  checkDrops: () => api.post('/price-alerts/check-drops'),
+};
+
+
 export default api;

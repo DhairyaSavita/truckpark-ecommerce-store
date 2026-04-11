@@ -1,20 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { cart } from '../services/api';
-import toast from 'react-hot-toast';
 import { ShoppingCartIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import WishlistButton from './WishlistButton';
+import PriceAlertButton from './PriceAlertButton';
+import { cart } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
-  const [isAdding, setIsAdding] = useState(false);
-
-  // Helper function to safely convert price to number
-  const toNumber = (value) => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') return parseFloat(value) || 0;
-    return 0;
-  };
+  const [isAdding, setIsAdding] = React.useState(false);
 
   const addToCart = async (e) => {
     e.preventDefault();
@@ -27,24 +22,21 @@ const ProductCard = ({ product }) => {
 
     setIsAdding(true);
     try {
-      console.log('Adding to cart:', { product_id: product.id, quantity: 1 });
-      const response = await cart.add({ product_id: product.id, quantity: 1 });
-      console.log('Cart response:', response.data);
+      await cart.add({ product_id: product.id, quantity: 1 });
       toast.success(`${product.name} added to cart!`);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error(error.response?.data?.error || 'Failed to add to cart');
+      toast.error('Failed to add to cart');
     } finally {
       setIsAdding(false);
     }
   };
 
   const formatPrice = (price) => {
-    const numPrice = toNumber(price);
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD'
-    }).format(numPrice);
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
   };
 
   return (
@@ -55,20 +47,16 @@ const ProductCard = ({ product }) => {
             src={product.image_url || 'https://via.placeholder.com/300x200?text=Truck+Part'}
             alt={product.name}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
-            }}
           />
           {product.stock_quantity < 10 && product.stock_quantity > 0 && (
-            <span className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
+            <span className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
               Low Stock
             </span>
           )}
-          {product.stock_quantity === 0 && (
-            <span className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-semibold">
-              Out of Stock
-            </span>
-          )}
+          <div className="absolute top-2 right-2 flex space-x-1">
+            <WishlistButton productId={product.id} productName={product.name} />
+            <PriceAlertButton productId={product.id} productName={product.name} currentPrice={product.price} />
+          </div>
         </div>
       </Link>
       

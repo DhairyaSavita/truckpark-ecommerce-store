@@ -32,7 +32,7 @@ router.get('/stats', verifyToken, isAdmin, async (req, res) => {
     const recentOrders = await Order.findAll({
       limit: 5,
       order: [['created_at', 'DESC']],
-      include: [{ model: User, attributes: ['name', 'email'] }]
+      include: [{ model: User, as: 'User', attributes: ['name', 'email'] }]
     });
     
     const recentUsers = await User.findAll({
@@ -118,12 +118,35 @@ router.put('/users/:id/role', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
+// Block/Unblock user
+router.put('/users/:id/block', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { block } = req.body;
+    const user = await User.findByPk(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    user.status = block ? 'blocked' : 'active';
+    await user.save();
+    res.json({ success: true, message: block ? 'User blocked' : 'User unblocked', user });
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete user
 router.delete('/users/:id', verifyToken, isAdmin, async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+    
+    if (user.email === 'admin@truckparts.com') {
+      return res.status(400).json({ error: 'Cannot delete the main admin user' });
     }
     
     await user.destroy();
@@ -141,9 +164,7 @@ router.get('/sellers', verifyToken, isAdmin, async (req, res) => {
       where: { 
         [Op.or]: [
           { role: 'seller' },
-          { 
-            store_name: { [Op.not]: null }
-          }
+          { store_name: { [Op.not]: null } }
         ]
       },
       attributes: { exclude: ['password'] },
@@ -175,7 +196,7 @@ router.get('/orders', verifyToken, isAdmin, async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [
-        { model: User, attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'User', attributes: ['id', 'name', 'email'] },
         { model: OrderItem, as: 'OrderItems', include: [{ model: Product, as: 'Product' }] }
       ],
       order: [['created_at', 'DESC']]

@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import Reviews from '../components/Reviews';
 import toast from 'react-hot-toast';
 import { ShoppingCartIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import WishlistButton from '../components/WishlistButton';
+import PriceAlertButton from '../components/PriceAlertButton';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -46,6 +48,14 @@ const ProductDetails = () => {
     }
   };
 
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -69,13 +79,6 @@ const ProductDetails = () => {
     );
   }
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <Link to="/products" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
@@ -98,21 +101,27 @@ const ProductDetails = () => {
         
         {/* Product Info */}
         <div>
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <div className="flex items-center space-x-2 mb-2">
-              {product.brand && (
-                <span className="text-sm text-gray-600">Brand: {product.brand}</span>
-              )}
-              {product.part_number && (
-                <span className="text-sm text-gray-500">| Part #: {product.part_number}</span>
-              )}
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <div className="flex items-center space-x-2 mb-2">
+                {product.brand && (
+                  <span className="text-sm text-gray-600">Brand: {product.brand}</span>
+                )}
+                {product.part_number && (
+                  <span className="text-sm text-gray-500">| Part #: {product.part_number}</span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-3xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+                {product.stock_quantity > 0 && (
+                  <span className="text-sm text-green-600">In Stock ({product.stock_quantity})</span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-3xl font-bold text-gray-900">{formatPrice(product.price)}</span>
-              {product.stock_quantity > 0 && (
-                <span className="text-sm text-green-600">In Stock ({product.stock_quantity})</span>
-              )}
+            <div className="flex space-x-2">
+              <WishlistButton productId={product.id} productName={product.name} />
+              <PriceAlertButton productId={product.id} productName={product.name} currentPrice={product.price} />
             </div>
           </div>
           
@@ -172,6 +181,19 @@ const ProductDetails = () => {
               </button>
             </div>
           </div>
+          
+          {/* Installation Booking Link */}
+          {user && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Need professional installation?</p>
+              <Link
+                to={`/installations?product=${product.id}`}
+                className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+              >
+                Book Installation Service →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
       
