@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
+import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
@@ -18,10 +19,12 @@ import SupportTicketsPage from './pages/SupportTicketsPage';
 import CompatibilityPage from './pages/CompatibilityPage';
 import B2BQuotesPage from './pages/B2BQuotesPage';
 import InstallationsPage from './pages/InstallationsPage';
+import Profile from './pages/Profile';
+import PriceAlertPage from './pages/PriceAlertPage';
+import DashboardOverview from './components/DashboardOverview';
 
 // Admin imports
 import AdminDashboard from './pages/Admin/Dashboard';
-import Profile from './pages/Profile';
 import AdminUsers from './pages/Admin/Users';
 import AdminProducts from './pages/Admin/Products';
 import AdminOrders from './pages/Admin/Orders';
@@ -52,11 +55,14 @@ const PrivateRoute = ({ children, adminOnly = false, sellerOnly = false }) => {
   return children;
 };
 
-function AppRoutes() {
+// Separate component for routes that need useAuth
+function AuthenticatedRoutes() {
+  const { user } = useAuth();
+  
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<Products />} />
+      <Route path="/" element={user ? <DashboardOverview /> : <Home />} />
       <Route path="/products" element={<Products />} />
       <Route path="/products/:id" element={<ProductDetails />} />
       <Route path="/contact" element={<Contact />} />
@@ -68,16 +74,17 @@ function AppRoutes() {
       <Route path="/forum/post/:id" element={<ForumPost />} />
       
       {/* Protected Routes */}
-      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
       <Route path="/checkout" element={<PrivateRoute><Checkout /></PrivateRoute>} />
       <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
       <Route path="/become-seller" element={<PrivateRoute><BecomeSeller /></PrivateRoute>} />
       <Route path="/wishlist" element={<PrivateRoute><WishlistPage /></PrivateRoute>} />
+      <Route path="/price-alerts" element={<PrivateRoute><PriceAlertPage /></PrivateRoute>} />
       <Route path="/support/tickets" element={<PrivateRoute><SupportTicketsPage /></PrivateRoute>} />
       <Route path="/compatibility" element={<PrivateRoute><CompatibilityPage /></PrivateRoute>} />
       <Route path="/b2b/quotes" element={<PrivateRoute><B2BQuotesPage /></PrivateRoute>} />
       <Route path="/installations" element={<PrivateRoute><InstallationsPage /></PrivateRoute>} />
+      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<PrivateRoute adminOnly><AdminDashboard /></PrivateRoute>} />
@@ -103,9 +110,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-50">
           <Navbar />
-          <AppRoutes />
+          <AuthenticatedRoutes />
           <Toaster position="top-right" />
           <Chatbot />
         </div>

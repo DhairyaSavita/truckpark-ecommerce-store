@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Op } = require('sequelize');
 const User = require('../models/User');
+const { verifyToken } = require('../config/auth');
 
 // Simple in-memory store for forum data
 let forumPosts = [];
@@ -39,7 +40,7 @@ const initSampleData = async () => {
 
 initSampleData();
 
-// Get all forum posts
+// Get all forum posts (public)
 router.get('/posts', async (req, res) => {
   try {
     const { category, search } = req.query;
@@ -70,7 +71,7 @@ router.get('/posts', async (req, res) => {
   }
 });
 
-// Get single post with comments
+// Get single post with comments (public)
 router.get('/posts/:id', async (req, res) => {
   try {
     const post = forumPosts.find(p => p.id === parseInt(req.params.id));
@@ -91,19 +92,30 @@ router.get('/posts/:id', async (req, res) => {
   }
 });
 
-// Create new post
-router.post('/posts', async (req, res) => {
+// Create new post (requires authentication)
+router.post('/posts', verifyToken, async (req, res) => {
   try {
+    console.log('Create post - User:', req.user);
+    
     const { title, content, category } = req.body;
     const userId = req.user?.id;
     
     if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
+      return res.status(401).json({ error: 'User not authenticated. Please login.' });
+    }
+    
+    // Check if user is seller or admin
+    if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only sellers can create forum posts' });
     }
     
     const user = await User.findByPk(userId, {
       attributes: ['id', 'name', 'store_name', 'role']
     });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     
     const newPost = {
       id: nextPostId++,
@@ -120,7 +132,7 @@ router.post('/posts', async (req, res) => {
     };
     
     forumPosts.unshift(newPost);
-    console.log(`📝 New forum post created: ${title}`);
+    console.log(`📝 New forum post created by ${user.name}: ${title}`);
     res.status(201).json(newPost);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -128,8 +140,8 @@ router.post('/posts', async (req, res) => {
   }
 });
 
-// Like a post
-router.post('/posts/:id/like', async (req, res) => {
+// Like a post (requires authentication)
+router.post('/posts/:id/like', verifyToken, async (req, res) => {
   try {
     const post = forumPosts.find(p => p.id === parseInt(req.params.id));
     if (!post) {
@@ -144,15 +156,21 @@ router.post('/posts/:id/like', async (req, res) => {
   }
 });
 
-// Add comment to post
-router.post('/posts/:id/comments', async (req, res) => {
+// Add comment to post (requires authentication)
+router.post('/posts/:id/comments', verifyToken, async (req, res) => {
   try {
+    console.log('Add comment - User:', req.user);
+    
     const { content } = req.body;
     const postId = parseInt(req.params.id);
     const userId = req.user?.id;
     
     if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
+      return res.status(401).json({ error: 'User not authenticated. Please login.' });
+    }
+    
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Comment content is required' });
     }
     
     const post = forumPosts.find(p => p.id === postId);
@@ -163,6 +181,10 @@ router.post('/posts/:id/comments', async (req, res) => {
     const user = await User.findByPk(userId, {
       attributes: ['id', 'name', 'store_name', 'role']
     });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
     
     const newComment = {
       id: nextCommentId++,
@@ -175,6 +197,7 @@ router.post('/posts/:id/comments', async (req, res) => {
     };
     
     forumComments.push(newComment);
+    console.log(`💬 New comment added by ${user.name}`);
     res.status(201).json(newComment);
   } catch (error) {
     console.error('Error adding comment:', error);
@@ -182,8 +205,8 @@ router.post('/posts/:id/comments', async (req, res) => {
   }
 });
 
-// Like a comment
-router.post('/comments/:id/like', async (req, res) => {
+// Like a comment (requires authentication)
+router.post('/comments/:id/like', verifyToken, async (req, res) => {
   try {
     const comment = forumComments.find(c => c.id === parseInt(req.params.id));
     if (!comment) {

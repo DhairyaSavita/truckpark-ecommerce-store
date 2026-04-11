@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { forumAPI } from '../../services/api';
 import { PlusIcon, ChatBubbleLeftIcon, HeartIcon, EyeIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const ForumList = () => {
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '', category: 'general' });
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const { user, loading: authLoading } = useAuth();
 
   const categories = [
     { value: 'all', label: 'All Topics', icon: '📋' },
@@ -50,20 +51,27 @@ const ForumList = () => {
     
     if (!user) {
       toast.error('Please login to create a post');
+      navigate('/login');
       return;
     }
     
     if (user.role !== 'seller' && user.role !== 'admin') {
-      toast.error('Only sellers can create posts');
+      toast.error('Only sellers can create forum posts');
+      return;
+    }
+    
+    if (!newPost.title.trim()) {
+      toast.error('Please enter a title');
+      return;
+    }
+    
+    if (!newPost.content.trim()) {
+      toast.error('Please enter content');
       return;
     }
     
     try {
-      const token = localStorage.getItem('token');
-      console.log('Creating post with token:', token ? 'Present' : 'Missing');
-      console.log('User:', user);
-      
-      await forumAPI.createPost(newPost);
+      const response = await forumAPI.createPost(newPost);
       toast.success('Post created successfully!');
       setShowCreateModal(false);
       setNewPost({ title: '', content: '', category: 'general' });
@@ -97,7 +105,7 @@ const ForumList = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl pt-20">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -114,6 +122,16 @@ const ForumList = () => {
           </button>
         )}
       </div>
+
+      {/* Login prompt for non-authenticated users */}
+      {!user && (
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">
+            Please <Link to="/login" className="font-semibold underline">login</Link> to create posts and comments.
+            Only sellers can create new discussions.
+          </p>
+        </div>
+      )}
 
       {/* Search Bar */}
       <div className="mb-6">
@@ -152,6 +170,14 @@ const ForumList = () => {
         {posts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500">No discussions found. Be the first to start a conversation!</p>
+            {(user?.role === 'seller' || user?.role === 'admin') && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="mt-4 text-blue-600 hover:text-blue-800"
+              >
+                Create First Post →
+              </button>
+            )}
           </div>
         ) : (
           posts.map((post) => (

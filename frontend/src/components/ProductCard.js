@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCartIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import { ShoppingCartIcon, EyeIcon } from '@heroicons/react/24/outline';
 import WishlistButton from './WishlistButton';
 import PriceAlertButton from './PriceAlertButton';
 import { cart } from '../services/api';
@@ -9,7 +10,7 @@ import toast from 'react-hot-toast';
 
 const ProductCard = ({ product }) => {
   const { user } = useAuth();
-  const [isAdding, setIsAdding] = React.useState(false);
+  const [isAdding, setIsAdding] = useState(false);
 
   const addToCart = async (e) => {
     e.preventDefault();
@@ -40,20 +41,24 @@ const ProductCard = ({ product }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+    <motion.div
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.2 }}
+      className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+    >
       <Link to={`/products/${product.id}`}>
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative overflow-hidden">
           <img
             src={product.image_url || 'https://via.placeholder.com/300x200?text=Truck+Part'}
             alt={product.name}
-            className="w-full h-full object-cover"
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
           />
           {product.stock_quantity < 10 && product.stock_quantity > 0 && (
-            <span className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded text-xs font-semibold">
+            <span className="absolute top-2 left-2 bg-yellow-500 text-white px-2 py-1 rounded-lg text-xs font-semibold">
               Low Stock
             </span>
           )}
-          <div className="absolute top-2 right-2 flex space-x-1">
+          <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <WishlistButton productId={product.id} productName={product.name} />
             <PriceAlertButton productId={product.id} productName={product.name} currentPrice={product.price} />
           </div>
@@ -62,34 +67,34 @@ const ProductCard = ({ product }) => {
       
       <div className="p-4">
         <Link to={`/products/${product.id}`}>
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
+          <div className="mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 hover:text-primary-600 transition">
               {product.name}
             </h3>
             {product.brand && (
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded ml-2">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mt-1 inline-block">
                 {product.brand}
               </span>
             )}
           </div>
           
-          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{product.description}</p>
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
         </Link>
         
         <div className="flex justify-between items-center mt-3">
           <div>
-            <p className="text-2xl font-bold text-gray-900">{formatPrice(product.price)}</p>
+            <p className="text-2xl font-bold text-primary-600">{formatPrice(product.price)}</p>
             {product.part_number && (
-              <p className="text-xs text-gray-500">PN: {product.part_number}</p>
+              <p className="text-xs text-gray-400">PN: {product.part_number}</p>
             )}
           </div>
           <button
             onClick={addToCart}
             disabled={isAdding || product.stock_quantity === 0}
-            className={`flex items-center space-x-1 px-4 py-2 rounded transition-colors ${
+            className={`flex items-center space-x-1 px-4 py-2 rounded-lg transition-all ${
               product.stock_quantity === 0
                 ? 'bg-gray-300 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                : 'bg-primary-600 hover:bg-primary-700 text-white shadow-md hover:shadow-lg'
             }`}
           >
             <ShoppingCartIcon className="h-5 w-5" />
@@ -99,13 +104,13 @@ const ProductCard = ({ product }) => {
         
         <Link
           to={`/products/${product.id}`}
-          className="flex items-center justify-center space-x-1 mt-3 text-blue-600 hover:text-blue-800 text-sm"
+          className="flex items-center justify-center space-x-1 mt-3 text-primary-600 hover:text-primary-700 text-sm"
         >
-          <InformationCircleIcon className="h-4 w-4" />
+          <EyeIcon className="h-4 w-4" />
           <span>View Details</span>
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
