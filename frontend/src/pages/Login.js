@@ -25,9 +25,15 @@ const Login = () => {
         setShow2FAModal(true);
       } else {
         localStorage.setItem('token', response.data.token);
+        // Store user data in context
         await login(email, password);
         toast.success('Login successful!');
-        navigate('/');
+        // Redirect based on role
+        if (response.data.user?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.error || 'Login failed');
@@ -38,14 +44,13 @@ const Login = () => {
 
   const handle2FASuccess = async (userData) => {
     setShow2FAModal(false);
-    // Update auth context with user data
     await login(email, password);
     toast.success('Login successful!');
     navigate('/');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-16">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-6 text-center">Login</h2>
         <form onSubmit={handleSubmit}>

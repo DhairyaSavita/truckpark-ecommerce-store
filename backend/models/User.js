@@ -44,6 +44,7 @@ const User = sequelize.define('User', {
   address: {
     type: DataTypes.TEXT
   },
+  
   // Security fields
   is_email_verified: {
     type: DataTypes.BOOLEAN,
@@ -71,6 +72,7 @@ const User = sequelize.define('User', {
   lock_until: {
     type: DataTypes.DATE
   },
+  
   // 2FA Fields
   two_factor_secret: {
     type: DataTypes.STRING,
@@ -84,7 +86,8 @@ const User = sequelize.define('User', {
     type: DataTypes.JSONB,
     defaultValue: []
   },
-  // Seller-specific fields
+  
+  // Seller fields
   store_name: {
     type: DataTypes.STRING
   },
@@ -124,6 +127,196 @@ const User = sequelize.define('User', {
   commission_rate: {
     type: DataTypes.DECIMAL(5, 2),
     defaultValue: 10.00
+  },
+  
+  // Technician fields
+  is_technician: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  technician_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  technician_experience: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  technician_specialization: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  technician_license_number: {
+    type: DataTypes.STRING
+  },
+  technician_rating: {
+    type: DataTypes.DECIMAL(3, 2),
+    defaultValue: 0
+  },
+  technician_completed_jobs: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  technician_hourly_rate: {
+    type: DataTypes.DECIMAL(10, 2)
+  },
+  technician_service_radius: {
+    type: DataTypes.INTEGER,
+    defaultValue: 50
+  },
+  technician_available: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  technician_location_lat: {
+    type: DataTypes.DECIMAL(10, 8)
+  },
+  technician_location_lng: {
+    type: DataTypes.DECIMAL(11, 8)
+  },
+  technician_address: {
+    type: DataTypes.TEXT
+  },
+  
+  // Driver fields
+  is_driver: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  driver_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  driver_license_number: {
+    type: DataTypes.STRING
+  },
+  driver_license_expiry: {
+    type: DataTypes.DATE
+  },
+  driver_experience_years: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  driver_rating: {
+    type: DataTypes.DECIMAL(3, 2),
+    defaultValue: 0
+  },
+  driver_completed_trips: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  driver_hourly_rate: {
+    type: DataTypes.DECIMAL(10, 2)
+  },
+  driver_daily_rate: {
+    type: DataTypes.DECIMAL(10, 2)
+  },
+  driver_available: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  },
+  driver_current_location_lat: {
+    type: DataTypes.DECIMAL(10, 8)
+  },
+  driver_current_location_lng: {
+    type: DataTypes.DECIMAL(11, 8)
+  },
+  driver_home_city: {
+    type: DataTypes.STRING
+  },
+  driver_preferred_routes: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  driver_vehicle_type: {
+    type: DataTypes.STRING
+  },
+  driver_license_classes: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  driver_bio: {
+    type: DataTypes.TEXT
+  },
+  driver_documents: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  
+  // Logistics fields
+  is_logistics: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  logistics_company_name: {
+    type: DataTypes.STRING
+  },
+  logistics_gst_number: {
+    type: DataTypes.STRING
+  },
+  logistics_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  logistics_rating: {
+    type: DataTypes.DECIMAL(3, 2),
+    defaultValue: 0
+  },
+  logistics_total_shipments: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  logistics_vehicle_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  logistics_service_pincodes: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  logistics_insurance_available: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  logistics_tracking_available: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  logistics_website: {
+    type: DataTypes.STRING
+  },
+  logistics_description: {
+    type: DataTypes.TEXT
+  },
+  
+  // Refurbisher fields
+  is_refurbisher: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  refurbisher_company_name: {
+    type: DataTypes.STRING
+  },
+  refurbisher_gst: {
+    type: DataTypes.STRING
+  },
+  refurbisher_verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  refurbisher_rating: {
+    type: DataTypes.DECIMAL(3, 2),
+    defaultValue: 0
+  },
+  refurbisher_total_sales: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  refurbisher_warehouse_address: {
+    type: DataTypes.TEXT
+  },
+  refurbisher_license_number: {
+    type: DataTypes.STRING
   }
 }, {
   tableName: 'users',
@@ -166,17 +359,6 @@ User.prototype.resetLoginAttempts = async function() {
 
 User.prototype.isLocked = function() {
   return this.lock_until && this.lock_until > new Date();
-};
-
-// Generate backup codes for 2FA
-User.prototype.generateBackupCodes = function() {
-  const codes = [];
-  for (let i = 0; i < 10; i++) {
-    const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-    codes.push(code);
-  }
-  this.two_factor_backup_codes = codes;
-  return codes;
 };
 
 module.exports = User;

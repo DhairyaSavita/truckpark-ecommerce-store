@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const authService = require('./authService');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
@@ -29,7 +28,7 @@ const verifyToken = async (req, res, next) => {
     }
     
     if (user.status === 'blocked') {
-      return res.status(403).json({ error: 'Your account has been blocked. Please contact admin.', code: 'ACCOUNT_BLOCKED' });
+      return res.status(403).json({ error: 'Your account has been blocked', code: 'ACCOUNT_BLOCKED' });
     }
     
     req.user = decoded;
@@ -43,30 +42,18 @@ const verifyToken = async (req, res, next) => {
 };
 
 const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  console.log('Checking admin access - User role:', req.user?.role);
+  if (req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Admin access required', code: 'ADMIN_REQUIRED' });
   }
   next();
 };
 
 const isSeller = (req, res, next) => {
-  if (req.user.role !== 'seller' && req.user.role !== 'admin') {
+  if (req.user?.role !== 'seller' && req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Seller access required', code: 'SELLER_REQUIRED' });
   }
   next();
 };
 
-const requireEmailVerification = (req, res, next) => {
-  if (!req.user.is_email_verified) {
-    return res.status(403).json({ error: 'Please verify your email first', code: 'EMAIL_NOT_VERIFIED' });
-  }
-  next();
-};
-
-module.exports = { 
-  generateToken, 
-  verifyToken, 
-  isAdmin, 
-  isSeller, 
-  requireEmailVerification 
-};
+module.exports = { generateToken, verifyToken, isAdmin, isSeller };

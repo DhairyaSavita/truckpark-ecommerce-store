@@ -14,7 +14,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth API with 2FA
+// Auth API
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
@@ -38,6 +38,7 @@ export const products = {
   getById: (id) => api.get(`/products/${id}`),
   getBySeller: (sellerId) => api.get(`/products/seller/${sellerId}`),
   getCategories: () => api.get('/categories'),
+  getAllProducts: () => api.get('/admin/products'),
 };
 
 // Cart endpoints
@@ -74,24 +75,70 @@ export const sellerAPI = {
   getEarnings: () => api.get('/seller/earnings'),
 };
 
-// Admin endpoints
-export const admin = {
-  getStats: () => api.get('/admin/stats'),
-  getUsers: () => api.get('/admin/users'),
-  createUser: (data) => api.post('/admin/users', data),
-  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
-  blockUser: (id, block) => api.put(`/admin/users/${id}/block`, { block }),
-  deleteUser: (id) => api.delete(`/admin/users/${id}`),
-  getSellers: () => api.get('/admin/sellers'),
-  approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
-  rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
-  getAllOrders: () => api.get('/admin/orders'),
-  getAllMessages: () => api.get('/admin/messages'),
-  getAllProducts: () => api.get('/admin/products'),
-  getSupportTickets: () => api.get('/admin/support-tickets'),
-  getUrgentTickets: () => api.get('/admin/support-tickets/urgent'),
-  updateSupportTicket: (id, data) => api.put(`/admin/support-tickets/${id}`, data),
-  deleteSupportTicket: (id) => api.delete(`/admin/support-tickets/${id}`),
+// Technician API
+export const technicianAPI = {
+  register: (data) => api.post('/technician/auth/register', data),
+  getProfile: () => api.get('/technician/auth/profile'),
+  updateProfile: (data) => api.put('/technician/auth/profile', data),
+  updateAvailability: (isAvailable) => api.put('/technician/auth/availability', { is_available: isAvailable }),
+  getNearbyRequests: () => api.get('/technician/requests/nearby'),
+  acceptRequest: (id) => api.post(`/technician/requests/${id}/accept`),
+  getMyRequests: () => api.get('/technician/requests/my-requests'),
+  updateRequestStatus: (id, status) => api.put(`/technician/requests/${id}/status`, { status }),
+  getEarnings: () => api.get('/technician/earnings'),
+};
+
+// Driver API
+export const driverAPI = {
+  register: (data) => api.post('/driver/auth/register', data),
+  getProfile: () => api.get('/driver/auth/profile'),
+  updateProfile: (data) => api.put('/driver/auth/profile', data),
+  updateAvailability: (isAvailable, location) => api.put('/driver/auth/availability', { is_available: isAvailable, ...location }),
+  getAvailableTrips: () => api.get('/driver/trips/available'),
+  acceptTrip: (id) => api.post(`/driver/trips/${id}/accept`),
+  getMyTrips: () => api.get('/driver/trips/my-trips'),
+  updateTripStatus: (id, status) => api.put(`/driver/trips/${id}/status`, { status }),
+  getEarnings: () => api.get('/driver/earnings'),
+};
+
+// Logistics API
+export const logisticsAPI = {
+  register: (data) => api.post('/logistics/auth/register', data),
+  getProfile: () => api.get('/logistics/auth/profile'),
+  updateProfile: (data) => api.put('/logistics/auth/profile', data),
+  getAvailableShipments: () => api.get('/logistics/shipments/available'),
+  acceptShipment: (id) => api.post(`/logistics/shipments/${id}/accept`),
+  getMyShipments: () => api.get('/logistics/shipments/my-shipments'),
+  updateShipmentStatus: (id, status) => api.put(`/logistics/shipments/${id}/status`, { status }),
+  getEarnings: () => api.get('/logistics/shipments/earnings'),
+};
+
+// Refurbisher API
+export const refurbisherAPI = {
+  register: (data) => api.post('/refurbisher/auth/register', data),
+  getProfile: () => api.get('/refurbisher/auth/profile'),
+  addProduct: (data) => api.post('/refurbisher/products/add', data),
+  getMyProducts: () => api.get('/refurbisher/products/my-products'),
+  updateProduct: (id, data) => api.put(`/refurbisher/products/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/refurbisher/products/products/${id}`),
+  createAuction: (data) => api.post('/refurbisher/auctions/create', data),
+  getMyAuctions: () => api.get('/refurbisher/auctions/my-auctions'),
+};
+
+// Public Auction API
+export const auctionAPI = {
+  getActiveAuctions: () => api.get('/auctions/active/list'),
+  getUpcomingAuctions: () => api.get('/auctions/upcoming'),
+  getAuction: (id) => api.get(`/auctions/${id}`),
+  placeBid: (id, data) => api.post(`/refurbisher/auctions/${id}/bid`, data),
+  addToWatchlist: (id) => api.post(`/refurbisher/auctions/${id}/watchlist`),
+};
+
+// Refurbished Products API
+export const refurbishedAPI = {
+  getAllProducts: (params) => api.get('/refurbished/products', { params }),
+  getProduct: (id) => api.get(`/refurbished/products/${id}`),
+  addReview: (id, data) => api.post(`/refurbished/products/${id}/review`, data),
 };
 
 // Message endpoints
@@ -172,10 +219,56 @@ export const bookingAPI = {
 
 // Admin Support API
 export const adminSupportAPI = {
-  getAllTickets: () => admin.getSupportTickets(),
-  getUrgentTickets: () => admin.getUrgentTickets(),
-  updateTicket: (id, data) => admin.updateSupportTicket(id, data),
-  deleteTicket: (id) => admin.deleteSupportTicket(id),
+  getAllTickets: () => api.get('/admin/support-tickets'),
+  getUrgentTickets: () => api.get('/admin/support-tickets/urgent'),
+  updateTicket: (id, data) => api.put(`/admin/support-tickets/${id}`, data),
+  deleteTicket: (id) => api.delete(`/admin/support-tickets/${id}`),
+};
+
+// Admin API (Super Admin) - Single declaration
+export const admin = {
+  // Super Admin endpoints
+  getSuperAdminStats: () => api.get('/admin/super-stats'),
+  getLogistics: () => api.get('/admin/logistics'),
+  approveLogistics: (id) => api.put(`/admin/logistics/${id}/approve`),
+  rejectLogistics: (id, reason) => api.put(`/admin/logistics/${id}/reject`, { reason }),
+  getPendingSellers: () => api.get('/admin/pending/sellers'),
+  getPendingTechnicians: () => api.get('/admin/pending/technicians'),
+  getPendingDrivers: () => api.get('/admin/pending/drivers'),
+  getPendingRefurbishers: () => api.get('/admin/pending/refurbishers'),
+  approveUser: (type, id) => api.put(`/admin/approve/${type}/${id}`),
+  rejectUser: (type, id, reason) => api.put(`/admin/reject/${type}/${id}`, { reason }),
+  
+  // Regular Admin endpoints
+  getStats: () => api.get('/admin/stats'),
+  getUsers: () => api.get('/admin/users'),
+  createUser: (data) => api.post('/admin/users', data),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  blockUser: (id, block) => api.put(`/admin/users/${id}/block`, { block }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getSellers: () => api.get('/admin/sellers'),
+  approveSeller: (id) => api.put(`/admin/sellers/${id}/approve`),
+  rejectSeller: (id, reason) => api.put(`/admin/sellers/${id}/reject`, { reason }),
+  getAllOrders: () => api.get('/admin/orders'),
+  getAllMessages: () => api.get('/admin/messages'),
+  getAllProducts: () => api.get('/admin/products'),
+  getSupportTickets: () => api.get('/admin/support-tickets'),
+  getUrgentTickets: () => api.get('/admin/support-tickets/urgent'),
+  updateSupportTicket: (id, data) => api.put(`/admin/support-tickets/${id}`, data),
+  deleteSupportTicket: (id) => api.delete(`/admin/support-tickets/${id}`),
+};
+
+
+// Upload API — product images
+export const uploadAPI = {
+  uploadProductImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/upload/product-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteProductImage: (filename) => api.delete(`/upload/product-image/${filename}`),
 };
 
 export default api;

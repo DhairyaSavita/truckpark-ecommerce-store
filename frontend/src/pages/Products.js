@@ -1,76 +1,177 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
+import BrandBanner from '../components/BrandBanner';
 import { products } from '../services/api';
-import { MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  CubeIcon,
+} from '@heroicons/react/24/outline';
 
+/* ─── useDebounce hook ─── */
+function useDebounce(value, delay = 350) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+/* ─── Constants ─── */
+const PAGE_SIZE = 12;
+
+const indianBrands = [
+  'Tata Motors', 'Ashok Leyland', 'Mahindra', 'BharatBenz',
+  'Eicher', 'Force Motors', 'SML Isuzu', 'MAN Trucks',
+  'Volvo Trucks', 'Scania', 'Cummins', 'Bosch', 'Bendix', 'Eaton',
+];
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
+/* ─── Skeleton Card ─── */
+const SkeletonCard = () => (
+  <div className="bg-white rounded-2xl overflow-hidden shadow-sm animate-pulse">
+    <div className="h-48 bg-gray-200" />
+    <div className="p-4 space-y-3">
+      <div className="h-3 bg-gray-200 rounded w-1/3" />
+      <div className="h-4 bg-gray-200 rounded w-4/5" />
+      <div className="h-3 bg-gray-200 rounded w-1/2" />
+      <div className="h-8 bg-gray-200 rounded-xl" />
+    </div>
+  </div>
+);
+
+/* ─── Pagination ─── */
+const Pagination = ({ current, total, onChange }) => {
+  if (total <= 1) return null;
+  const pages = [];
+  for (let i = 1; i <= total; i++) pages.push(i);
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-10">
+      <button
+        onClick={() => onChange(current - 1)}
+        disabled={current === 1}
+        className="p-2 rounded-xl border border-gray-200 hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronLeftIcon className="h-4 w-4 text-gray-600" />
+      </button>
+
+      {pages.slice(Math.max(0, current - 3), Math.min(total, current + 2)).map((p) => (
+        <button
+          key={p}
+          onClick={() => onChange(p)}
+          className={`w-9 h-9 rounded-xl text-sm font-semibold transition-all ${
+            p === current
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+              : 'border border-gray-200 text-gray-600 hover:border-indigo-400 hover:text-indigo-600'
+          }`}
+        >
+          {p}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onChange(current + 1)}
+        disabled={current === total}
+        className="p-2 rounded-xl border border-gray-200 hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+      >
+        <ChevronRightIcon className="h-4 w-4 text-gray-600" />
+      </button>
+    </div>
+  );
+};
+
+/* ─── Main Component ─── */
 const Products = () => {
-  const [productList, setProductList] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
-  const [selectedBrand, setSelectedBrand] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [showBrands, setShowBrands] = useState(true);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Debounce search input
+  const debouncedSearch = useDebounce(searchInput, 350);
+
+  // Reset page when filters change
+  const prevFilters = useRef({});
   useEffect(() => {
-    fetchCategories();
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedCategory, selectedBrand, priceRange.min, priceRange.max, sortBy]);
+
+  // Fetch categories once
+  useEffect(() => {
+    products.getCategories()
+      .then((r) => setCategories(r.data))
+      .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory, searchTerm, priceRange.min, priceRange.max, selectedBrand, sortBy]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await products.getCategories();
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchProducts = async () => {
+  // Fetch products whenever debounced filters change
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
-      if (selectedCategory && selectedCategory !== '') {
-        params.category = parseInt(selectedCategory);
-      }
-      if (searchTerm) params.search = searchTerm;
+      if (selectedCategory) params.category = parseInt(selectedCategory);
+      if (selectedBrand) params.brand = selectedBrand;
+      if (debouncedSearch) params.search = debouncedSearch;
       if (priceRange.min) params.minPrice = parseFloat(priceRange.min);
       if (priceRange.max) params.maxPrice = parseFloat(priceRange.max);
-      if (selectedBrand) params.brand = selectedBrand;
       if (sortBy) params.sort = sortBy;
-      
+
       const response = await products.getAll(params);
-      setProductList(response.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
+      setAllProducts(response.data || []);
+    } catch {
+      setAllProducts([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, selectedCategory, selectedBrand, priceRange.min, priceRange.max, sortBy]);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   const clearFilters = () => {
     setSelectedCategory('');
-    setSearchTerm('');
-    setPriceRange({ min: '', max: '' });
     setSelectedBrand('');
+    setSearchInput('');
+    setPriceRange({ min: '', max: '' });
     setSortBy('newest');
+    setCurrentPage(1);
   };
 
-  const brands = [...new Set(productList.map(p => p.brand).filter(b => b))];
+  const hasActiveFilters =
+    selectedCategory || selectedBrand || searchInput || priceRange.min || priceRange.max;
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 }
-  };
+  // Client-side pagination
+  const totalPages = Math.ceil(allProducts.length / PAGE_SIZE);
+  const pagedProducts = allProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
+
+  const getBrandCount = (brand) => allProducts.filter((p) => p.brand === brand).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 pt-20">
       <div className="container-custom py-8">
         {/* Header */}
         <motion.div
@@ -79,10 +180,12 @@ const Products = () => {
           variants={fadeInUp}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Truck Spare Parts
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-1">
+            Indian Truck Spare Parts
           </h1>
-          <p className="text-gray-600">Find the perfect parts for your truck</p>
+          <p className="text-gray-500">
+            Genuine OEM & aftermarket parts for all Indian truck brands (2010+)
+          </p>
         </motion.div>
 
         {/* Search Bar */}
@@ -90,74 +193,164 @@ const Products = () => {
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.05 }}
           className="mb-6"
         >
           <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by product name, brand, or part number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Search by product name, brand, or part number…"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-200 bg-white rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent shadow-sm text-sm"
             />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </motion.div>
 
-        {/* Categories Filter */}
+        {/* Category Filter Pills */}
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
+          transition={{ delay: 0.1 }}
+          className="mb-5"
         >
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Category</h3>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedCategory('')}
-              className={`px-4 py-2 rounded-full transition-all ${
-                selectedCategory === '' 
-                  ? 'bg-primary-600 text-white shadow-md' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                selectedCategory === ''
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400 hover:text-indigo-600'
               }`}
             >
               All Products
             </button>
-            {categories.map(category => (
+            {categories.map((cat) => (
               <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id.toString())}
-                className={`px-4 py-2 rounded-full transition-all ${
-                  selectedCategory === category.id.toString() 
-                    ? 'bg-primary-600 text-white shadow-md' 
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id.toString())}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  selectedCategory === cat.id.toString()
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400 hover:text-indigo-600'
                 }`}
               >
-                {category.name}
+                {cat.name}
               </button>
             ))}
           </div>
         </motion.div>
 
-        {/* Filter Toggle */}
+        {/* Brand Showcase Tiles */}
+        {showBrands && (
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            transition={{ delay: 0.15 }}
+            className="mb-6"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                Featured Brands
+              </h3>
+              <button
+                onClick={() => setShowBrands(false)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                Hide
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+              {indianBrands.slice(0, 10).map((brand) => (
+                <div key={brand} onClick={() => setSelectedBrand(brand)}>
+                  <BrandBanner brand={brand} count={getBrandCount(brand)} />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Brand Filter Pills */}
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.2 }}
+          className="mb-5"
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Filter by Brand
+            </h3>
+            {selectedBrand && (
+              <button
+                onClick={() => setSelectedBrand('')}
+                className="text-xs text-red-500 hover:text-red-600"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedBrand('')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                selectedBrand === ''
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400'
+              }`}
+            >
+              All Brands
+            </button>
+            {indianBrands.map((brand) => (
+              <button
+                key={brand}
+                onClick={() => setSelectedBrand(brand)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  selectedBrand === brand
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400'
+                }`}
+              >
+                {brand}
+                {getBrandCount(brand) > 0 && (
+                  <span className="ml-1 opacity-70">({getBrandCount(brand)})</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Advanced Filters Toggle */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+          transition={{ delay: 0.25 }}
           className="mb-4"
         >
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center space-x-2 text-primary-600 hover:text-primary-700"
+            className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 font-medium"
           >
-            <FunnelIcon className="h-5 w-5" />
-            <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+            <FunnelIcon className="h-4 w-4" />
+            {showFilters ? 'Hide Advanced Filters' : 'Advanced Filters'}
           </button>
         </motion.div>
 
-        {/* Advanced Filters */}
+        {/* Advanced Filters Panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -165,48 +358,41 @@ const Products = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-xl shadow-md p-6 mb-6 overflow-hidden"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (₹)</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    Min Price (₹)
+                  </label>
                   <input
                     type="number"
-                    placeholder="Min"
+                    placeholder="e.g. 500"
                     value={priceRange.min}
                     onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Price (₹)</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    Max Price (₹)
+                  </label>
                   <input
                     type="number"
-                    placeholder="Max"
+                    placeholder="e.g. 50,000"
                     value={priceRange.max}
                     onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                  <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">All Brands</option>
-                    {brands.map(brand => (
-                      <option key={brand} value={brand}>{brand}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    Sort By
+                  </label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="newest">Newest First</option>
                     <option value="price_asc">Price: Low to High</option>
@@ -214,12 +400,12 @@ const Products = () => {
                   </select>
                 </div>
               </div>
-              <div className="mt-4 text-right">
+              <div className="mt-4 flex justify-end">
                 <button
                   onClick={clearFilters}
-                  className="text-gray-600 hover:text-gray-800 text-sm flex items-center ml-auto"
+                  className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors"
                 >
-                  <XMarkIcon className="h-4 w-4 mr-1" />
+                  <XMarkIcon className="h-4 w-4" />
                   Clear All Filters
                 </button>
               </div>
@@ -227,58 +413,87 @@ const Products = () => {
           )}
         </AnimatePresence>
 
-        {/* Results Count */}
+        {/* Results Count + active filter chips */}
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          transition={{ delay: 0.4 }}
-          className="mb-4 text-gray-600"
+          transition={{ delay: 0.3 }}
+          className="mb-5 flex flex-wrap items-center gap-3"
         >
-          Found {productList.length} products
+          <p className="text-sm text-gray-500">
+            Showing{' '}
+            <span className="font-bold text-indigo-600">
+              {Math.min((currentPage - 1) * PAGE_SIZE + 1, allProducts.length)}–
+              {Math.min(currentPage * PAGE_SIZE, allProducts.length)}
+            </span>{' '}
+            of <span className="font-bold text-gray-700">{allProducts.length}</span> products
+          </p>
+
+          {/* Active filter chips */}
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 text-xs bg-red-50 text-red-500 border border-red-200 px-3 py-1 rounded-full hover:bg-red-100 transition-colors"
+            >
+              <XMarkIcon className="h-3 w-3" />
+              Clear All
+            </button>
+          )}
         </motion.div>
 
         {/* Products Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-gray-200 animate-pulse rounded-xl h-80"></div>
-            ))}
+            {[...Array(PAGE_SIZE)].map((_, i) => <SkeletonCard key={i} />)}
           </div>
-        ) : productList.length === 0 ? (
+        ) : pagedProducts.length === 0 ? (
           <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeInUp}
-            className="text-center py-12 bg-white rounded-xl shadow-sm"
+            className="text-center py-20 bg-white rounded-2xl shadow-sm"
           >
-            <p className="text-gray-500 text-lg">No products found</p>
+            <CubeIcon className="h-16 w-16 text-gray-200 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">No products found</h3>
+            <p className="text-gray-400 text-sm mb-6">
+              Try adjusting your filters or search term
+            </p>
             <button
               onClick={clearFilters}
-              className="mt-4 text-primary-600 hover:text-primary-800"
+              className="bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
             >
-              Clear all filters
+              Clear All Filters
             </button>
           </motion.div>
         ) : (
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.1 }
-              }
-            }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-          >
-            {productList.map(product => (
-              <motion.div key={product.id} variants={fadeInUp}>
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
-          </motion.div>
+          <>
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
+              {pagedProducts.map((product) => (
+                <motion.div key={product.id} variants={fadeInUp}>
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Pagination */}
+            <Pagination
+              current={currentPage}
+              total={totalPages}
+              onChange={(p) => {
+                setCurrentPage(p);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          </>
         )}
       </div>
     </div>
