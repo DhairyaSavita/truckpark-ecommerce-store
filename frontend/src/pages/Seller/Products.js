@@ -7,9 +7,7 @@ import {
   EyeIcon,
   TrashIcon,
   PhotoIcon,
-  CheckCircleIcon,
   CubeIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 

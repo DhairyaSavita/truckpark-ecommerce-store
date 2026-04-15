@@ -259,7 +259,15 @@ export const admin = {
 };
 
 
-// Upload API — product images
+// Logistics Communication API (role-gated: logistics + admin + driver only; sellers BLOCKED)
+export const logisticsChatAPI = {
+  getConversations: ()           => api.get('/logistics/messages'),
+  getThread: (peerId)            => api.get(`/logistics/messages/thread/${peerId}`),
+  sendMessage: (data)            => api.post('/logistics/messages', data),
+  markRead: (id)                 => api.put(`/logistics/messages/${id}/read`),
+  getVendors: ()                 => api.get('/logistics/messages/vendors'),
+};
+
 export const uploadAPI = {
   uploadProductImage: (file) => {
     const formData = new FormData();

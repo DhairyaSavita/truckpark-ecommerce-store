@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import Chatbot from './components/Chatbot';
 
@@ -43,6 +44,7 @@ const Profile            = lazy(() => import('./pages/Profile'));
 const TechnicianDashboard = lazy(() => import('./pages/TechnicianDashboard'));
 const DriverDashboard     = lazy(() => import('./pages/DriverDashboard'));
 const LogisticsDashboard  = lazy(() => import('./pages/LogisticsDashboard'));
+const LogisticsCommunication = lazy(() => import('./pages/LogisticsCommunication'));
 const RefurbisherDashboard = lazy(() => import('./pages/RefurbisherDashboard'));
 const DashboardOverview   = lazy(() => import('./components/DashboardOverview'));
 
@@ -135,6 +137,7 @@ function AppRoutes() {
         <Route path="/technician/dashboard" element={<PrivateRoute><TechnicianDashboard /></PrivateRoute>} />
         <Route path="/driver/dashboard"     element={<PrivateRoute><DriverDashboard /></PrivateRoute>} />
         <Route path="/logistics/dashboard"  element={<PrivateRoute><LogisticsDashboard /></PrivateRoute>} />
+        <Route path="/logistics/messages"   element={<PrivateRoute><LogisticsCommunication /></PrivateRoute>} />
         <Route path="/refurbisher/dashboard" element={<PrivateRoute><RefurbisherDashboard /></PrivateRoute>} />
 
         {/* Admin */}
@@ -168,9 +171,10 @@ function AppRoutes() {
 // ─────────────────────────────────────────────────────────────────────────────
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <div style={{ minHeight: '100vh', background: 'var(--bg-page)', transition: 'background 0.35s ease, color 0.35s ease' }}>
           <Navbar />
           <AppRoutes />
           <Toaster
@@ -179,11 +183,18 @@ function App() {
               duration: 3500,
               style: {
                 borderRadius: '12px',
-                fontFamily: 'Inter, sans-serif',
+                fontFamily: "'Inter', sans-serif",
                 fontSize: '14px',
+                background: '#141D2E',
+                color: '#F1F5F9',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
               },
               success: {
-                iconTheme: { primary: '#6366f1', secondary: '#fff' },
+                iconTheme: { primary: '#F97316', secondary: '#141D2E' },
+              },
+              error: {
+                iconTheme: { primary: '#F43F5E', secondary: '#141D2E' },
               },
             }}
           />
@@ -191,6 +202,7 @@ function App() {
         </div>
       </AuthProvider>
     </Router>
+  </ThemeProvider>
   );
 }
 

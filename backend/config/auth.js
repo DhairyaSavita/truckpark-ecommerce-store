@@ -56,4 +56,63 @@ const isSeller = (req, res, next) => {
   next();
 };
 
-module.exports = { generateToken, verifyToken, isAdmin, isSeller };
+/**
+ * isLogistics — only verified logistics partners and admins pass.
+ */
+const isLogistics = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(401).json({ error: 'User not found' });
+    if (req.user?.role === 'admin' || user.is_logistics) return next();
+    return res.status(403).json({
+      error: 'Logistics partner access required',
+      code: 'LOGISTICS_REQUIRED',
+    });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+};
+
+/**
+ * canContactLogistics
+ *
+ * Access rules for the logistics communication channel:
+ *  ✅  Logistics partners  (is_logistics = true)  — full access, can initiate
+ *  ✅  Admins              (role = 'admin')         — full access
+ *  ✅  Drivers             (is_driver = true)       — coordination access
+ *  ✅  Sellers/Vendors     (role = 'seller')        — CAN READ & REPLY to threads
+ *                                                     where a logistics partner has
+ *                                                     already contacted them, but
+ *                                                     CANNOT initiate new conversations.
+ *                                                     (enforced at route level)
+ *  ❌  Plain customers     (role = 'user', no flags) — blocked entirely
+ */
+const canContactLogistics = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(401).json({ error: 'User not found' });
+
+    // Admins always pass
+    if (req.user?.role === 'admin') return next();
+
+    // Logistics partners always pass
+    if (user.is_logistics) return next();
+
+    // Drivers always pass (they coordinate with logistics)
+    if (user.is_driver) return next();
+
+    // Sellers/Vendors: allowed to READ and REPLY to existing threads.
+    // They cannot INITIATE — that restriction is enforced at POST / route level.
+    if (req.user?.role === 'seller') return next();
+
+    // Everyone else (plain 'user' with no special flags) is blocked
+    return res.status(403).json({
+      error: 'You do not have permission to access the logistics communication channel.',
+      code: 'LOGISTICS_ACCESS_DENIED',
+    });
+  } catch (e) {
+    return res.status(500).json({ error: e.message });
+  }
+};
+
+module.exports = { generateToken, verifyToken, isAdmin, isSeller, isLogistics, canContactLogistics };

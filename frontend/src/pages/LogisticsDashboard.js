@@ -1,279 +1,378 @@
 import React, { useState, useEffect } from 'react';
 import { logisticsAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { 
-  TruckIcon, 
-  CurrencyRupeeIcon, 
+import {
+  TruckIcon,
+  CurrencyRupeeIcon,
   ShoppingBagIcon,
   MapPinIcon,
   CheckCircleIcon,
   ClockIcon,
-  EyeIcon
+  ChatBubbleLeftRightIcon,
+  ShieldCheckIcon,
+  ChartBarIcon,
+  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
+import DashboardLayout from '../components/DashboardLayout';
+import StatCard from '../components/ui/StatCard';
+import PageHeader from '../components/ui/PageHeader';
+
+const NAV_ITEMS = [
+  { divider: 'Logistics' },
+  { label: 'Dashboard',      to: '/logistics/dashboard', icon: ChartBarIcon },
+  { label: 'Vendor Chat',    to: '/logistics/messages',  icon: ChatBubbleLeftRightIcon, badge: 'Live' },
+  { divider: 'Shipments' },
+  { label: 'Available',      to: '/logistics/dashboard', icon: TruckIcon },
+  { label: 'My Shipments',   to: '/logistics/dashboard', icon: ShoppingBagIcon },
+];
+
+const STATUS_CONFIG = {
+  pending:    { label: 'Pending',    badgeClass: 'badge-amber' },
+  accepted:   { label: 'Accepted',   badgeClass: 'badge-blue' },
+  in_transit: { label: 'In Transit', badgeClass: 'badge-violet' },
+  delivered:  { label: 'Delivered',  badgeClass: 'badge-green' },
+  cancelled:  { label: 'Cancelled',  badgeClass: 'badge-rose' },
+};
+
+const ShipmentCard = ({ shipment, actions, delay = 0 }) => {
+  const sc = STATUS_CONFIG[shipment.status] || STATUS_CONFIG.pending;
+  return (
+    <div className="card-dark" style={{
+      padding: 20,
+      animation: `fadeSlideUp 0.4s ease-out ${delay}ms both`,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            <span style={{
+              fontFamily: "'Outfit', sans-serif",
+              fontSize: '0.82rem', fontWeight: 700,
+              color: 'var(--text-muted)',
+            }}>
+              #{shipment.id}
+            </span>
+            <span className={`badge ${sc.badgeClass}`}>{sc.label}</span>
+            {shipment.Customer?.name && (
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: '0.75rem', color: 'var(--text-muted)',
+              }}>
+                · {shipment.Customer.name}
+              </span>
+            )}
+          </div>
+
+          {/* Route visual */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <MapPinIcon style={{ width: 12, height: 12, color: 'var(--emerald)' }} />
+              </div>
+              <div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                  Pickup
+                </p>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  {shipment.pickup_address}
+                </p>
+              </div>
+            </div>
+
+            {/* Route line */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 12 }}>
+              <div style={{ width: 1, height: 16, background: 'var(--border-medium)', marginLeft: 5 }} />
+              <ArrowRightIcon style={{ width: 12, height: 12, color: 'var(--text-muted)' }} />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 6, flexShrink: 0,
+                background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <MapPinIcon style={{ width: 12, height: 12, color: 'var(--rose)' }} />
+              </div>
+              <div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                  Delivery
+                </p>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                  {shipment.delivery_address}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta row */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{
+              fontFamily: "'Inter', sans-serif", fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+            }}>
+              ⚖️ {shipment.weight_kg} kg
+            </span>
+            <span style={{
+              fontFamily: "'Outfit', sans-serif", fontSize: '1rem', fontWeight: 700,
+              color: 'var(--emerald)',
+            }}>
+              ₹{shipment.final_cost || shipment.estimated_cost}
+            </span>
+            {shipment.tracking_number && (
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.75rem', color: 'var(--blue)' }}>
+                🔍 {shipment.tracking_number}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {actions && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 }}>
+            {actions}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EmptyState = ({ icon: Icon, title, subtitle }) => (
+  <div style={{
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    padding: '60px 24px', textAlign: 'center',
+  }}>
+    <div style={{
+      width: 72, height: 72, borderRadius: 20,
+      background: 'rgba(249,115,22,0.08)', border: '1px solid rgba(249,115,22,0.15)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20,
+      animation: 'float 3s ease-in-out infinite',
+    }}>
+      <Icon style={{ width: 38, height: 38, color: 'var(--orange)' }} />
+    </div>
+    <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>
+      {title}
+    </h3>
+    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: 280, lineHeight: 1.6 }}>
+      {subtitle}
+    </p>
+  </div>
+);
 
 const LogisticsDashboard = () => {
   const { user } = useAuth();
   const [availableShipments, setAvailableShipments] = useState([]);
-  const [myShipments, setMyShipments] = useState([]);
+  const [myShipments, setMyShipments]   = useState([]);
   const [earnings, setEarnings] = useState({ total_earnings: 0, pending_earnings: 0, completed_shipments: 0 });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]   = useState(true);
   const [activeTab, setActiveTab] = useState('available');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [availableRes, myShipmentsRes, earningsRes] = await Promise.all([
+      const [availRes, myRes, earnRes] = await Promise.all([
         logisticsAPI.getAvailableShipments(),
         logisticsAPI.getMyShipments(),
-        logisticsAPI.getEarnings()
+        logisticsAPI.getEarnings(),
       ]);
-      setAvailableShipments(availableRes.data);
-      setMyShipments(myShipmentsRes.data);
-      setEarnings(earningsRes.data);
-    } catch (error) {
+      setAvailableShipments(availRes.data);
+      setMyShipments(myRes.data);
+      setEarnings(earnRes.data);
+    } catch {
       toast.error('Failed to load dashboard data');
     } finally {
       setLoading(false);
     }
   };
 
-  const acceptShipment = async (shipmentId) => {
+  const acceptShipment = async (id) => {
     try {
-      await logisticsAPI.acceptShipment(shipmentId);
-      toast.success('Shipment accepted successfully!');
+      await logisticsAPI.acceptShipment(id);
+      toast.success('Shipment accepted!');
       fetchData();
-    } catch (error) {
-      toast.error('Failed to accept shipment');
-    }
+    } catch { toast.error('Failed to accept shipment'); }
   };
 
-  const updateShipmentStatus = async (shipmentId, status) => {
+  const updateStatus = async (id, status) => {
     try {
-      await logisticsAPI.updateShipmentStatus(shipmentId, status);
-      toast.success(`Shipment ${status}`);
+      await logisticsAPI.updateShipmentStatus(id, status);
+      toast.success(`Shipment marked as ${status}`);
       fetchData();
-    } catch (error) {
-      toast.error('Failed to update status');
-    }
+    } catch { toast.error('Failed to update status'); }
   };
-
-  const getStatusBadge = (status) => {
-    const badges = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-blue-100 text-blue-800',
-      in_transit: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800'
-    };
-    return badges[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  if (loading) {
-    return <div className="text-center py-10">Loading dashboard...</div>;
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20">
-      <div className="container-custom py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Logistics Dashboard</h1>
-            <p className="text-gray-600">Manage your shipments and track earnings</p>
+    <DashboardLayout navItems={NAV_ITEMS} title="Logistics Hub">
+      {/* Header */}
+      <PageHeader
+        title="Logistics Dashboard"
+        subtitle="Manage your shipments, track earnings, and coordinate with vendors."
+        icon={TruckIcon}
+        badge={{
+          label: user?.logistics_verified ? 'Verified Partner' : 'Pending Verification',
+          variant: user?.logistics_verified ? 'green' : 'amber',
+        }}
+        actions={
+          <Link to="/logistics/messages" className="btn-primary" style={{ gap: 8 }}>
+            <ChatBubbleLeftRightIcon style={{ width: 18, height: 18 }} />
+            Vendor Chat
+          </Link>
+        }
+      />
+
+      {/* Vendor Communication CTA Banner */}
+      <Link to="/logistics/messages" style={{ textDecoration: 'none', marginBottom: 24, display: 'block' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.06))',
+          border: '1px solid rgba(59,130,246,0.2)',
+          borderRadius: 'var(--radius)',
+          padding: '16px 22px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          transition: 'all var(--transition)',
+          cursor: 'pointer',
+        }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.1))'; e.currentTarget.style.borderColor = 'rgba(59,130,246,0.35)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.06))'; e.currentTarget.style.borderColor = 'rgba(59,130,246,0.2)'; }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 11,
+              background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <ChatBubbleLeftRightIcon style={{ width: 20, height: 20, color: 'var(--blue)' }} />
+            </div>
+            <div>
+              <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 3 }}>
+                Vendor Communication Portal
+              </p>
+              <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Coordinate transport with vendors — restricted to logistics & admin roles only
+              </p>
+            </div>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Company Status</p>
-            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${user?.logistics_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {user?.logistics_verified ? 'Verified' : 'Pending Verification'}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <span className="badge badge-blue">Logistics Only</span>
+            <ArrowRightIcon style={{ width: 16, height: 16, color: 'var(--blue)' }} />
           </div>
         </div>
+      </Link>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Earnings</p>
-                <p className="text-2xl font-bold text-green-600">₹{earnings.total_earnings.toLocaleString()}</p>
-              </div>
-              <CurrencyRupeeIcon className="h-10 w-10 text-green-500 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Completed Shipments</p>
-                <p className="text-2xl font-bold text-blue-600">{earnings.completed_shipments}</p>
-              </div>
-              <CheckCircleIcon className="h-10 w-10 text-blue-500 opacity-50" />
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Pending Earnings</p>
-                <p className="text-2xl font-bold text-yellow-600">₹{earnings.pending_earnings.toLocaleString()}</p>
-              </div>
-              <ClockIcon className="h-10 w-10 text-yellow-500 opacity-50" />
-            </div>
-          </div>
-        </div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 28 }}>
+        <StatCard title="Total Earnings" value={earnings.total_earnings} prefix="₹" icon={CurrencyRupeeIcon} variant="emerald" loading={loading} delay={0} />
+        <StatCard title="Completed Shipments" value={earnings.completed_shipments} icon={CheckCircleIcon} variant="blue" loading={loading} delay={80} />
+        <StatCard title="Pending Earnings" value={earnings.pending_earnings} prefix="₹" icon={ClockIcon} variant="amber" loading={loading} delay={160} />
+      </div>
 
-        {/* Tabs */}
-        <div className="flex border-b mb-6">
+      {/* Tabs */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+        <div className="tab-group">
           <button
+            className={`tab-btn${activeTab === 'available' ? ' active' : ''}`}
             onClick={() => setActiveTab('available')}
-            className={`px-6 py-2 font-semibold ${activeTab === 'available' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
           >
-            Available Shipments ({availableShipments.length})
+            Available ({availableShipments.length})
           </button>
           <button
+            className={`tab-btn${activeTab === 'my-shipments' ? ' active' : ''}`}
             onClick={() => setActiveTab('my-shipments')}
-            className={`px-6 py-2 font-semibold ${activeTab === 'my-shipments' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'}`}
           >
             My Shipments ({myShipments.length})
           </button>
         </div>
-
-        {/* Available Shipments Tab */}
-        {activeTab === 'available' && (
-          <div>
-            {availableShipments.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-12 text-center">
-                <TruckIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No available shipments</h3>
-                <p className="text-gray-500">Check back later for new shipment requests</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {availableShipments.map(shipment => (
-                  <div key={shipment.id} className="bg-white rounded-xl shadow-md p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-gray-500">#{shipment.id}</span>
-                          <span className={`px-2 py-1 rounded text-xs ${getStatusBadge(shipment.status)}`}>
-                            {shipment.status}
-                          </span>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-start gap-2">
-                            <MapPinIcon className="h-4 w-4 text-green-600 mt-0.5" />
-                            <div>
-                              <p className="font-semibold">Pickup:</p>
-                              <p className="text-gray-600">{shipment.pickup_address}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <MapPinIcon className="h-4 w-4 text-red-600 mt-0.5" />
-                            <div>
-                              <p className="font-semibold">Delivery:</p>
-                              <p className="text-gray-600">{shipment.delivery_address}</p>
-                            </div>
-                          </div>
-                          <div className="flex justify-between pt-2">
-                            <span>Weight: {shipment.weight_kg} kg</span>
-                            <span className="font-semibold text-green-600">₹{shipment.estimated_cost}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => acceptShipment(shipment.id)}
-                        className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 ml-4"
-                      >
-                        Accept
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* My Shipments Tab */}
-        {activeTab === 'my-shipments' && (
-          <div>
-            {myShipments.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-12 text-center">
-                <ShoppingBagIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No shipments yet</h3>
-                <p className="text-gray-500">Accept shipments to see them here</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {myShipments.map(shipment => (
-                  <div key={shipment.id} className="bg-white rounded-xl shadow-md p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-gray-500">#{shipment.id}</span>
-                          <span className={`px-2 py-1 rounded text-xs ${getStatusBadge(shipment.status)}`}>
-                            {shipment.status}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            Customer: {shipment.Customer?.name}
-                          </span>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex items-start gap-2">
-                            <MapPinIcon className="h-4 w-4 text-green-600 mt-0.5" />
-                            <div>
-                              <p className="font-semibold">Pickup:</p>
-                              <p className="text-gray-600">{shipment.pickup_address}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <MapPinIcon className="h-4 w-4 text-red-600 mt-0.5" />
-                            <div>
-                              <p className="font-semibold">Delivery:</p>
-                              <p className="text-gray-600">{shipment.delivery_address}</p>
-                            </div>
-                          </div>
-                          <div className="flex justify-between pt-2">
-                            <span>Weight: {shipment.weight_kg} kg</span>
-                            <span className="font-semibold text-green-600">₹{shipment.final_cost || shipment.estimated_cost}</span>
-                          </div>
-                          {shipment.tracking_number && (
-                            <div className="text-xs text-blue-600">
-                              Tracking: {shipment.tracking_number}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-2 ml-4">
-                        {shipment.status === 'accepted' && (
-                          <button
-                            onClick={() => updateShipmentStatus(shipment.id, 'in_transit')}
-                            className="bg-purple-600 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Start Transit
-                          </button>
-                        )}
-                        {shipment.status === 'in_transit' && (
-                          <button
-                            onClick={() => updateShipmentStatus(shipment.id, 'delivered')}
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-                          >
-                            Mark Delivered
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
-    </div>
+
+      {/* Available Shipments */}
+      {activeTab === 'available' && (
+        <div>
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px,1fr))', gap: 16 }}>
+              {[1,2,3,4].map(i => (
+                <div key={i} className="card-dark" style={{ padding: 20, height: 180 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div className="skeleton-dark" style={{ height: 13, width: 80, borderRadius: 4 }} />
+                    <div className="skeleton-dark" style={{ height: 40, width: '100%', borderRadius: 4 }} />
+                    <div className="skeleton-dark" style={{ height: 40, width: '100%', borderRadius: 4 }} />
+                    <div className="skeleton-dark" style={{ height: 13, width: 120, borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : availableShipments.length === 0 ? (
+            <div className="card-dark">
+              <EmptyState icon={TruckIcon} title="No Available Shipments" subtitle="Check back later — new shipment requests from buyers will appear here." />
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px,1fr))', gap: 16 }}>
+              {availableShipments.map((s, i) => (
+                <ShipmentCard key={s.id} shipment={s} delay={i * 60}
+                  actions={
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '0.82rem' }}
+                      onClick={() => acceptShipment(s.id)}
+                    >
+                      Accept
+                    </button>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* My Shipments */}
+      {activeTab === 'my-shipments' && (
+        <div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[1,2,3].map(i => (
+                <div key={i} className="card-dark" style={{ padding: 20, height: 180 }}>
+                  <div className="skeleton-dark" style={{ height: '100%', borderRadius: 8 }} />
+                </div>
+              ))}
+            </div>
+          ) : myShipments.length === 0 ? (
+            <div className="card-dark">
+              <EmptyState icon={ShoppingBagIcon} title="No Shipments Yet" subtitle="Accept available shipments to start managing deliveries and earning." />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {myShipments.map((s, i) => (
+                <ShipmentCard key={s.id} shipment={s} delay={i * 60}
+                  actions={
+                    <>
+                      {s.status === 'accepted' && (
+                        <button className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                          onClick={() => updateStatus(s.id, 'in_transit')}>
+                          Start Transit
+                        </button>
+                      )}
+                      {s.status === 'in_transit' && (
+                        <button className="btn-success" style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                          onClick={() => updateStatus(s.id, 'delivered')}>
+                          Mark Delivered
+                        </button>
+                      )}
+                    </>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </DashboardLayout>
   );
 };
 

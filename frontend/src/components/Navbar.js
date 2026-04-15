@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import ThemeToggle, { ThemeToggleSwitch } from './ThemeToggle';
 import { 
   ShoppingCartIcon, 
   UserIcon,
@@ -470,6 +471,9 @@ const Navbar = () => {
                 </>
               )}
 
+              {/* ── Theme Toggle (always visible in desktop nav) ── */}
+              <ThemeToggle />
+
               {!user && (
                 <div className="flex items-center space-x-3">
                   <Link to="/login" className={`px-4 py-2 rounded-lg transition-all ${
@@ -507,6 +511,11 @@ const Navbar = () => {
             className="fixed inset-0 z-40 bg-white pt-16 overflow-y-auto lg:hidden"
           >
             <div className="p-4 space-y-3">
+              {/* Theme Toggle — mobile */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', marginBottom: 4 }}>
+                <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Appearance</span>
+                <ThemeToggleSwitch />
+              </div>
               {/* Main Navigation */}
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Main</p>

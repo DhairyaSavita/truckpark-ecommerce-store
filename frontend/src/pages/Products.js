@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import BrandBanner from '../components/BrandBanner';
@@ -112,10 +112,10 @@ const Products = () => {
   const debouncedSearch = useDebounce(searchInput, 350);
 
   // Reset page when filters change
-  const prevFilters = useRef({});
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, selectedCategory, selectedBrand, priceRange.min, priceRange.max, sortBy]);
+
 
   // Fetch categories once
   useEffect(() => {

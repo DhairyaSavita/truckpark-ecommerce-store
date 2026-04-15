@@ -19,6 +19,7 @@ const ServiceBooking = require('./models/ServiceBooking');
 const Wishlist = require('./models/Wishlist');
 const PriceAlert = require('./models/PriceAlert');
 const B2BQuote = require('./models/B2BQuote');
+const LogisticsMessage = require('./models/LogisticsMessage');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -111,6 +112,12 @@ User.hasMany(B2BQuote, { foreignKey: 'user_id' });
 B2BQuote.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
 B2BQuote.belongsTo(Product, { foreignKey: 'product_id', as: 'Product' });
 
+// LogisticsMessage associations
+User.hasMany(LogisticsMessage, { foreignKey: 'sender_id',   as: 'SentLogisticsMessages' });
+User.hasMany(LogisticsMessage, { foreignKey: 'receiver_id', as: 'ReceivedLogisticsMessages' });
+LogisticsMessage.belongsTo(User, { foreignKey: 'sender_id',   as: 'Sender' });
+LogisticsMessage.belongsTo(User, { foreignKey: 'receiver_id', as: 'Receiver' });
+
 // ============ ROUTES ============
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
@@ -130,6 +137,11 @@ app.use('/api/wishlist', require('./routes/wishlist'));
 app.use('/api/price-alerts', require('./routes/price-alerts'));
 app.use('/api/b2b', require('./routes/b2b/quotes'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/logistics/messages', require('./routes/logistics/communication'));
+
+// Logistics base routes (auth + shipments)
+app.use('/api/logistics/auth',      require('./routes/logistics/auth'));
+app.use('/api/logistics/shipments', require('./routes/logistics/shipments'));
 
 // ============ HEALTH CHECK ============
 app.get('/api/health', (_req, res) => {
