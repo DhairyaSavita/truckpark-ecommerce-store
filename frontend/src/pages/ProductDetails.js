@@ -16,6 +16,7 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchProduct();
   }, [id]);

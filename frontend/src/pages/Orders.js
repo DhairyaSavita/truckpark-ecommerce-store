@@ -8,7 +8,6 @@ import {
   CheckCircleIcon, 
   ClockIcon,
   EyeIcon,
-  CurrencyDollarIcon,
   ShoppingBagIcon
 } from '@heroicons/react/24/outline';
 
@@ -19,9 +18,9 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [filter, setFilter] = useState('all');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchOrders();
-    
     if (location.state?.newOrder) {
       toast.success('Order placed successfully!');
     }

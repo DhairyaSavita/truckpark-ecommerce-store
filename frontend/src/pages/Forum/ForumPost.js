@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { forumAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
-import { HeartIcon, ChatBubbleLeftIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
+import { HeartIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const ForumPost = () => {
@@ -16,6 +15,7 @@ const ForumPost = () => {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPost();
   }, [id]);

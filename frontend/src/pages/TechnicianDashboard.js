@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { technicianAPI } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth as _useAuth } from '../context/AuthContext';
 import {
   WrenchScrewdriverIcon, CurrencyRupeeIcon, ClockIcon,
   MapPinIcon, CheckCircleIcon, ChartBarIcon,
@@ -90,7 +90,6 @@ const RequestCard = ({ request, onAccept, onUpdateStatus, delay = 0 }) => {
 };
 
 const TechnicianDashboard = () => {
-  const { user } = useAuth();
   const [nearbyRequests, setNearbyRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [earnings, setEarnings] = useState({ total_earnings: 0, pending_earnings: 0, completed_jobs: 0 });
@@ -142,7 +141,7 @@ const TechnicianDashboard = () => {
             onClick={toggleAvailability}
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
-              borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
+              borderRadius: 'var(--radius-sm)', cursor: 'pointer',
               fontFamily: "'Outfit', sans-serif", fontSize: '0.88rem', fontWeight: 600,
               background: isAvailable ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
               color: isAvailable ? 'var(--emerald)' : 'var(--text-muted)',

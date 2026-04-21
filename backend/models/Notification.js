@@ -22,9 +22,10 @@ const Notification = sequelize.define('Notification', {
   type: {
     type: DataTypes.STRING,
     validate: {
-      isIn: [['order', 'product', 'payout', 'system']]
+      isIn: [['order', 'product', 'payout', 'system', 'fleet', 'appointment', 'scheduler_rules']]
     }
   },
+
   is_read: {
     type: DataTypes.BOOLEAN,
     defaultValue: false

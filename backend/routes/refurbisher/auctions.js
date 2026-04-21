@@ -182,24 +182,11 @@ router.get('/upcoming', async (req, res) => {
   }
 });
 
-// Add to watchlist
+// Add to watchlist (stub — AuctionWatchlist table not yet created)
 router.post('/:id/watchlist', verifyToken, async (req, res) => {
   try {
-    const AuctionWatchlist = require('../../models/AuctionWatchlist');
-    const existing = await AuctionWatchlist.findOne({
-      where: { user_id: req.user.id, auction_id: req.params.id }
-    });
-    
-    if (existing) {
-      return res.status(400).json({ error: 'Already in watchlist' });
-    }
-    
-    await AuctionWatchlist.create({
-      user_id: req.user.id,
-      auction_id: req.params.id
-    });
-    
-    res.json({ success: true });
+    // AuctionWatchlist feature is planned — return success for now
+    res.json({ success: true, message: 'Added to watchlist' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

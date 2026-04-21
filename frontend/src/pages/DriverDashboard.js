@@ -103,7 +103,6 @@ const TripCard = ({ trip, onAccept, onUpdateStatus, delay = 0 }) => {
 };
 
 const DriverDashboard = () => {
-  const { user } = useAuth();
   const [availableTrips, setAvailableTrips] = useState([]);
   const [myTrips, setMyTrips] = useState([]);
   const [earnings, setEarnings] = useState({ total_earnings: 0, pending_earnings: 0, completed_trips: 0 });
@@ -155,7 +154,7 @@ const DriverDashboard = () => {
             onClick={toggleAvailability}
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px',
-              borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer',
+              borderRadius: 'var(--radius-sm)', cursor: 'pointer',
               fontFamily: "'Outfit', sans-serif", fontSize: '0.88rem', fontWeight: 600,
               background: isAvailable ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
               color: isAvailable ? 'var(--emerald)' : 'var(--text-muted)',

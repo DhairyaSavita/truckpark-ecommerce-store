@@ -27,20 +27,21 @@ import {
 
 const NAV_ITEMS = [
   { divider: 'Overview' },
-  { label: 'Dashboard',    to: '/admin',                icon: ChartBarIcon },
+  { label: 'Dashboard',    to: '/admin',                  icon: ChartBarIcon },
   { divider: 'Management' },
-  { label: 'Users',        to: '/admin/users',          icon: UsersIcon },
-  { label: 'Products',     to: '/admin/products',       icon: CubeIcon },
-  { label: 'Orders',       to: '/admin/orders',         icon: ShoppingBagIcon },
-  { label: 'Inventory',    to: '/admin/inventory',      icon: ClipboardDocumentListIcon },
-  { divider: 'Partners' },
-  { label: 'Sellers',      to: '/admin/sellers',        icon: BuildingStorefrontIcon },
-  { label: 'Logistics',    to: '/admin/logistics',      icon: TruckIcon },
+  { label: 'Users',        to: '/admin/users',            icon: UsersIcon },
+  { label: 'Products',     to: '/admin/products',         icon: CubeIcon },
+  { label: 'Orders',       to: '/admin/orders',           icon: ShoppingBagIcon },
+  { label: 'Inventory',    to: '/admin/inventory',        icon: ClipboardDocumentListIcon },
+  { divider: 'Approvals' },
+  { label: 'All Approvals',to: '/admin/approvals',        icon: ShieldCheckIcon },
+  { label: 'Sellers',      to: '/admin/sellers',          icon: BuildingStorefrontIcon },
+  { label: 'Logistics',    to: '/admin/logistics',        icon: TruckIcon },
   { divider: 'Support' },
   { label: 'Support Tickets', to: '/admin/support-tickets', icon: TicketIcon },
-  { label: 'Messages',     to: '/admin/messages',       icon: EnvelopeIcon },
+  { label: 'Messages',     to: '/admin/messages',         icon: EnvelopeIcon },
   { divider: 'System' },
-  { label: 'Super Admin',  to: '/admin/super',          icon: ShieldCheckIcon },
+  { label: 'Super Admin',  to: '/admin/super',            icon: ShieldCheckIcon },
 ];
 
 const STATUS_CONFIG = {
@@ -130,25 +131,26 @@ const Dashboard = () => {
   };
 
   const STAT_CARDS = [
-    { title: 'Total Users',      value: stats.totalUsers,       icon: UsersIcon,              variant: 'blue',    link: '/admin/users',   delay: 0 },
-    { title: 'Total Sellers',    value: stats.totalSellers,     icon: UserGroupIcon,          variant: 'emerald', link: '/admin/sellers', delay: 60 },
-    { title: 'Total Products',   value: stats.totalProducts,    icon: CubeIcon,               variant: 'violet',  link: '/admin/inventory', delay: 120 },
-    { title: 'Total Orders',     value: stats.totalOrders,      icon: ShoppingBagIcon,        variant: 'orange',  link: '/admin/orders',  delay: 180 },
-    { title: 'Pending Orders',   value: stats.pendingOrders,    icon: ClipboardDocumentListIcon, variant: 'amber', link: '/admin/orders?status=pending', delay: 240 },
-    { title: 'Total Revenue',    value: typeof stats.totalRevenue === 'number' ? stats.totalRevenue.toFixed(0) : 0, icon: CurrencyRupeeIcon, variant: 'emerald', prefix: '₹', link: '/admin/orders', delay: 300 },
-    { title: 'Low Stock Items',  value: stats.lowStockProducts, icon: TruckIcon,              variant: 'rose',    link: '/admin/inventory?filter=lowstock', delay: 360 },
-    { title: 'Pending Sellers',  value: stats.pendingSellers,   icon: BuildingStorefrontIcon, variant: 'amber',   link: '/admin/sellers?filter=pending', delay: 420 },
+    { title: 'Total Users',         value: stats.totalUsers,       icon: UsersIcon,                 variant: 'blue',    link: '/admin/users',                   delay: 0 },
+    { title: 'Total Sellers',       value: stats.totalSellers,     icon: UserGroupIcon,             variant: 'emerald', link: '/admin/sellers',                 delay: 60 },
+    { title: 'Total Products',      value: stats.totalProducts,    icon: CubeIcon,                  variant: 'violet',  link: '/admin/inventory',               delay: 120 },
+    { title: 'Total Orders',        value: stats.totalOrders,      icon: ShoppingBagIcon,           variant: 'orange',  link: '/admin/orders',                  delay: 180 },
+    { title: 'Pending Orders',      value: stats.pendingOrders,    icon: ClipboardDocumentListIcon, variant: 'amber',   link: '/admin/orders?status=pending',   delay: 240 },
+    { title: 'Total Revenue',       value: typeof stats.totalRevenue === 'number' ? stats.totalRevenue.toFixed(0) : 0, icon: CurrencyRupeeIcon, variant: 'emerald', prefix: '₹', link: '/admin/orders', delay: 300 },
+    { title: 'Low Stock Items',     value: stats.lowStockProducts, icon: TruckIcon,                 variant: 'rose',    link: '/admin/inventory?filter=lowstock', delay: 360 },
+    { title: 'Pending Approvals',   value: stats.pendingSellers,   icon: ShieldCheckIcon,           variant: 'amber',   link: '/admin/approvals',               delay: 420 },
   ];
 
   const QUICK_ACTIONS = [
-    { to: '/admin/users',    icon: UsersIcon,              label: 'Manage Users',    color: 'var(--blue)',    delay: 0 },
-    { to: '/admin/inventory',icon: CubeIcon,               label: 'Inventory',       color: 'var(--violet)',  delay: 60 },
-    { to: '/admin/orders',   icon: ShoppingBagIcon,        label: 'View Orders',     color: 'var(--orange)',  delay: 120 },
-    { to: '/admin/sellers',  icon: BuildingStorefrontIcon, label: 'Manage Sellers',  color: 'var(--emerald)', delay: 180 },
-    { to: '/admin/logistics',icon: TruckIcon,              label: 'Logistics',       color: 'var(--cyan)',    delay: 240 },
-    { to: '/admin/support-tickets', icon: TicketIcon,      label: 'Support Tickets', color: 'var(--amber)',   delay: 300 },
-    { to: '/admin/messages', icon: EnvelopeIcon,           label: 'Messages',        color: 'var(--rose)',    delay: 360 },
-    { to: '/admin/super',    icon: ShieldCheckIcon,        label: 'Super Admin',     color: 'var(--violet)',  delay: 420 },
+    { to: '/admin/users',     icon: UsersIcon,              label: 'Manage Users',    color: 'var(--blue)',    delay: 0 },
+    { to: '/admin/inventory', icon: CubeIcon,               label: 'Inventory',       color: 'var(--violet)',  delay: 60 },
+    { to: '/admin/orders',    icon: ShoppingBagIcon,        label: 'View Orders',     color: 'var(--orange)',  delay: 120 },
+    { to: '/admin/approvals', icon: ShieldCheckIcon,        label: 'Approvals',       color: 'var(--amber)',   delay: 180 },
+    { to: '/admin/sellers',   icon: BuildingStorefrontIcon, label: 'Manage Sellers',  color: 'var(--emerald)', delay: 240 },
+    { to: '/admin/logistics', icon: TruckIcon,              label: 'Logistics',       color: 'var(--cyan)',    delay: 300 },
+    { to: '/admin/support-tickets', icon: TicketIcon,       label: 'Support Tickets', color: 'var(--rose)',    delay: 360 },
+    { to: '/admin/messages',  icon: EnvelopeIcon,           label: 'Messages',        color: 'var(--blue)',    delay: 420 },
+    { to: '/admin/super',     icon: ShieldCheckIcon,        label: 'Super Admin',     color: 'var(--violet)',  delay: 480 },
   ];
 
   return (

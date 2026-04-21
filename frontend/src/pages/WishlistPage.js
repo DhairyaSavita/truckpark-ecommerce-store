@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { wishlistAPI, priceAlertAPI } from '../services/api';
-import { HeartIcon, TrashIcon, BellIcon, CurrencyRupeeIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, TrashIcon, BellIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import PriceAlertButton from '../components/PriceAlertButton';
 
 const WishlistPage = () => {
+  // eslint-disable-next-line no-unused-vars
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState([]);
   const [loading, setLoading] = useState(true);

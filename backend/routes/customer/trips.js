@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
+const sequelize = require('../../config/database');
 const TripRequest = require('../../models/TripRequest');
 const DriverProfile = require('../../models/DriverProfile');
 const User = require('../../models/User');
@@ -28,16 +30,9 @@ router.post('/', verifyToken, async (req, res) => {
       special_requirements
     } = req.body;
     
-    // Calculate estimated cost
-    let estimated_cost = 0;
-    if (distance_km) {
-      const avgRate = await DriverProfile.findAll({
-        where: { is_verified: true, is_available: true },
-        attributes: [[sequelize.fn('AVG', sequelize.col('hourly_rate')), 'avgRate']]
-      });
-      const avgHourlyRate = avgRate[0]?.dataValues.avgRate || 500;
-      estimated_cost = avgHourlyRate * (estimated_duration || 2);
-    }
+    // Calculate estimated cost (simplified: base rate ₹500/hr)
+    const avgHourlyRate = 500;
+    const estimated_cost = distance_km ? avgHourlyRate * (estimated_duration || 2) : 0;
     
     const trip = await TripRequest.create({
       customer_id: req.user.id,

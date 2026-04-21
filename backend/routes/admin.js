@@ -8,6 +8,10 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Message = require('../models/Message');
 const SupportTicket = require('../models/SupportTicket');
+const TechnicianProfile = require('../models/TechnicianProfile');
+const TechnicianHireRequest = require('../models/TechnicianHireRequest');
+const DriverProfile = require('../models/DriverProfile');
+const DriverHireRequest = require('../models/DriverHireRequest');
 const { verifyToken, isAdmin } = require('../config/auth');
 
 // Dashboard stats
@@ -350,10 +354,8 @@ router.put('/logistics/:id/approve', verifyToken, isAdmin, async (req, res) => {
     if (!logistics) {
       return res.status(404).json({ error: 'Logistics not found' });
     }
-    
     logistics.logistics_verified = true;
     await logistics.save();
-    
     res.json({ success: true, message: 'Logistics approved' });
   } catch (error) {
     console.error('Error approving logistics:', error);
@@ -361,4 +363,771 @@ router.put('/logistics/:id/approve', verifyToken, isAdmin, async (req, res) => {
   }
 });
 
+// Reject logistics
+router.put('/logistics/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const logistics = await User.findByPk(req.params.id);
+    if (!logistics) {
+      return res.status(404).json({ error: 'Logistics not found' });
+    }
+    logistics.logistics_verified = false;
+    logistics.rejection_reason = reason;
+    await logistics.save();
+    res.json({ success: true, message: 'Logistics rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject seller
+router.put('/sellers/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const seller = await User.findByPk(req.params.id);
+    if (!seller) return res.status(404).json({ error: 'Seller not found' });
+    seller.is_approved = false;
+    seller.rejection_reason = reason;
+    await seller.save();
+    res.json({ success: true, message: 'Seller rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ SUPER ADMIN STATS ============
+router.get('/super-stats', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const [
+      totalUsers,
+      totalSellers,
+      totalTechnicians,
+      totalDrivers,
+      totalLogistics,
+      totalRefurbishers,
+      totalOrders,
+      totalProducts,
+    ] = await Promise.all([
+      User.count(),
+      User.count({ where: { role: 'seller' } }),
+      User.count({ where: { is_technician: true } }),
+      User.count({ where: { is_driver: true } }),
+      User.count({ where: { is_logistics: true } }),
+      User.count({ where: { is_refurbisher: true } }),
+      require('../models/Order').count(),
+      require('../models/Product').count(),
+    ]);
+
+    const allOrders = await require('../models/Order').findAll({ attributes: ['total_amount'] });
+    const totalRevenue = allOrders.reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
+
+    // Recent users as activity feed
+    const recentUsers = await User.findAll({
+      limit: 10,
+      order: [['created_at', 'DESC']],
+      attributes: ['id', 'name', 'email', 'role', 'created_at', 'is_technician', 'is_driver', 'is_logistics', 'is_refurbisher']
+    });
+
+    const recentActivities = recentUsers.map(u => ({
+      message: `${u.name} registered as ${u.is_technician ? 'Technician' : u.is_driver ? 'Driver' : u.is_logistics ? 'Logistics' : u.is_refurbisher ? 'Refurbisher' : u.role}`,
+      time: new Date(u.created_at).toLocaleString('en-IN')
+    }));
+
+    res.json({
+      totalUsers,
+      totalSellers,
+      totalTechnicians,
+      totalDrivers,
+      totalLogistics,
+      totalRefurbishers,
+      totalOrders,
+      totalProducts,
+      totalRevenue,
+      commissionRate: 10,
+      recentActivities
+    });
+  } catch (error) {
+    console.error('Error fetching super stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ PENDING APPROVALS BY TYPE ============
+
+// Pending sellers
+router.get('/pending/sellers', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const sellers = await User.findAll({
+      where: {
+        [Op.or]: [
+          { store_name: { [Op.not]: null } },
+          { role: 'seller' }
+        ],
+        is_approved: { [Op.or]: [false, null] }
+      },
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
+    });
+    res.json(sellers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Pending technicians
+router.get('/pending/technicians', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const technicians = await User.findAll({
+      where: {
+        is_technician: true,
+        technician_verified: false
+      },
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
+    });
+    res.json(technicians);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Pending drivers
+router.get('/pending/drivers', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const drivers = await User.findAll({
+      where: {
+        is_driver: true,
+        driver_verified: false
+      },
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
+    });
+    res.json(drivers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Pending logistics
+router.get('/pending/logistics', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const logistics = await User.findAll({
+      where: {
+        is_logistics: true,
+        logistics_verified: false
+      },
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
+    });
+    res.json(logistics);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Pending refurbishers
+router.get('/pending/refurbishers', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const refurbishers = await User.findAll({
+      where: {
+        is_refurbisher: true,
+        refurbisher_verified: false
+      },
+      attributes: { exclude: ['password'] },
+      order: [['created_at', 'DESC']]
+    });
+    res.json(refurbishers);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ UNIFIED APPROVE / REJECT ============
+
+// Approve any role type: seller | technician | driver | logistics | refurbisher
+router.put('/approve/:type/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    switch (type) {
+      case 'seller':
+        user.role = 'seller';
+        user.is_approved = true;
+        break;
+      case 'technician':
+        user.technician_verified = true;
+        break;
+      case 'driver':
+        user.driver_verified = true;
+        break;
+      case 'logistics':
+        user.logistics_verified = true;
+        break;
+      case 'refurbisher':
+        user.refurbisher_verified = true;
+        break;
+      default:
+        return res.status(400).json({ error: `Unknown type: ${type}` });
+    }
+
+    await user.save();
+    res.json({ success: true, message: `${type} approved successfully` });
+  } catch (error) {
+    console.error('Error approving user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reject any role type
+router.put('/reject/:type/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { type, id } = req.params;
+    const { reason } = req.body;
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    switch (type) {
+      case 'seller':
+        user.is_approved = false;
+        user.rejection_reason = reason;
+        break;
+      case 'technician':
+        user.technician_verified = false;
+        user.rejection_reason = reason;
+        break;
+      case 'driver':
+        user.driver_verified = false;
+        user.rejection_reason = reason;
+        break;
+      case 'logistics':
+        user.logistics_verified = false;
+        user.rejection_reason = reason;
+        break;
+      case 'refurbisher':
+        user.refurbisher_verified = false;
+        user.rejection_reason = reason;
+        break;
+      default:
+        return res.status(400).json({ error: `Unknown type: ${type}` });
+    }
+
+    await user.save();
+    res.json({ success: true, message: `${type} rejected` });
+  } catch (error) {
+    console.error('Error rejecting user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ URGENT SUPPORT TICKETS ============
+router.get('/support-tickets/urgent', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const tickets = await SupportTicket.findAll({
+      where: { priority: 'high', status: 'open' },
+      include: [{ model: User, as: 'User', attributes: ['id', 'name', 'email'] }],
+      order: [['created_at', 'ASC']]
+    });
+    res.json(tickets);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete support ticket
+router.delete('/support-tickets/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const ticket = await SupportTicket.findByPk(req.params.id);
+    if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
+    await ticket.destroy();
+    res.json({ success: true, message: 'Ticket deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ADMIN — TECHNICIAN MANAGEMENT ============
+
+// Get ALL technicians (full detail)
+router.get('/technicians', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { status, verified, search, limit = 50, offset = 0 } = req.query;
+
+    const userWhere = { is_technician: true };
+    if (verified === 'true') userWhere.technician_verified = true;
+    if (verified === 'false') userWhere.technician_verified = false;
+    if (search) {
+      userWhere[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    const profileWhere = {};
+    if (status) profileWhere.approval_status = status;
+
+    const technicians = await TechnicianProfile.findAll({
+      where: profileWhere,
+      include: [{
+        model: User,
+        as: 'User',
+        where: userWhere,
+        attributes: { exclude: ['password'] }
+      }],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({ success: true, data: technicians, total: technicians.length });
+  } catch (error) {
+    console.error('Admin get technicians error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single technician full detail + hire history
+router.get('/technicians/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const profile = await TechnicianProfile.findOne({
+      where: { user_id: req.params.id },
+      include: [{
+        model: User,
+        as: 'User',
+        attributes: { exclude: ['password'] }
+      }]
+    });
+
+    if (!profile) return res.status(404).json({ error: 'Technician profile not found' });
+
+    // Get hire history
+    const hireHistory = await TechnicianHireRequest.findAll({
+      where: { technician_id: req.params.id },
+      include: [{
+        model: User,
+        as: 'Requester',
+        attributes: ['id', 'name', 'email', 'store_name']
+      }],
+      order: [['created_at', 'DESC']],
+      limit: 20
+    });
+
+    res.json({ success: true, data: { profile, hireHistory } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin approve technician profile
+router.put('/technicians/:id/approve', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const profile = await TechnicianProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Technician not found' });
+
+    profile.is_verified = true;
+    profile.approval_status = 'approved';
+    if (notes) profile.admin_notes = notes;
+    await profile.save();
+
+    // Sync user flags
+    await User.update(
+      { technician_verified: true },
+      { where: { id: req.params.id } }
+    );
+
+    res.json({ success: true, message: 'Technician approved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin reject technician profile
+router.put('/technicians/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason, notes } = req.body;
+    const profile = await TechnicianProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Technician not found' });
+
+    profile.is_verified = false;
+    profile.approval_status = 'rejected';
+    profile.rejection_reason = reason;
+    if (notes) profile.admin_notes = notes;
+    await profile.save();
+
+    await User.update(
+      { technician_verified: false, rejection_reason: reason },
+      { where: { id: req.params.id } }
+    );
+
+    res.json({ success: true, message: 'Technician rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin suspend technician
+router.put('/technicians/:id/suspend', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const profile = await TechnicianProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Technician not found' });
+
+    profile.is_verified = false;
+    profile.is_available = false;
+    profile.approval_status = 'suspended';
+    profile.admin_notes = reason || 'Suspended by admin';
+    await profile.save();
+
+    res.json({ success: true, message: 'Technician suspended' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin update technician role/assignment
+router.put('/technicians/:id/role', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { appointed_vendor_id, is_available, admin_notes } = req.body;
+    const profile = await TechnicianProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Technician not found' });
+
+    if (appointed_vendor_id !== undefined) profile.appointed_vendor_id = appointed_vendor_id;
+    if (is_available !== undefined) profile.is_available = is_available;
+    if (admin_notes !== undefined) profile.admin_notes = admin_notes;
+    await profile.save();
+
+    res.json({ success: true, message: 'Technician role/assignment updated', data: profile });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ADMIN — ALL HIRE REQUESTS PLATFORM-WIDE ============
+
+// Get all hire requests
+router.get('/technician-hires', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { status, limit = 50, offset = 0 } = req.query;
+    const where = {};
+    if (status) where.status = status;
+
+    const hires = await TechnicianHireRequest.findAll({
+      where,
+      include: [
+        { model: User, as: 'Requester', attributes: ['id', 'name', 'email', 'store_name', 'role'] },
+        { model: User, as: 'Technician', attributes: ['id', 'name', 'email', 'technician_rating', 'technician_address'] }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({ success: true, data: hires, total: hires.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin approve a hire request
+router.put('/technician-hires/:id/approve', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const hireReq = await TechnicianHireRequest.findByPk(req.params.id);
+    if (!hireReq) return res.status(404).json({ error: 'Hire request not found' });
+
+    hireReq.admin_approval = true;
+    hireReq.status = 'admin_approved';
+    hireReq.admin_notes = notes;
+    hireReq.admin_reviewed_at = new Date();
+    await hireReq.save();
+
+    res.json({ success: true, message: 'Hire request approved by admin', data: hireReq });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin reject a hire request
+router.put('/technician-hires/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const hireReq = await TechnicianHireRequest.findByPk(req.params.id);
+    if (!hireReq) return res.status(404).json({ error: 'Hire request not found' });
+
+    hireReq.admin_approval = false;
+    hireReq.status = 'admin_rejected';
+    hireReq.rejection_reason = reason;
+    hireReq.admin_reviewed_at = new Date();
+    await hireReq.save();
+
+    res.json({ success: true, message: 'Hire request rejected by admin', data: hireReq });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin technician stats
+router.get('/technicians/stats/overview', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const [total, verified, pending, rejected, suspended] = await Promise.all([
+      TechnicianProfile.count(),
+      TechnicianProfile.count({ where: { approval_status: 'approved' } }),
+      TechnicianProfile.count({ where: { approval_status: 'pending' } }),
+      TechnicianProfile.count({ where: { approval_status: 'rejected' } }),
+      TechnicianProfile.count({ where: { approval_status: 'suspended' } })
+    ]);
+
+    const [totalHires, pendingHires, activeHires, completedHires] = await Promise.all([
+      TechnicianHireRequest.count(),
+      TechnicianHireRequest.count({ where: { status: 'pending' } }),
+      TechnicianHireRequest.count({ where: { status: ['technician_accepted', 'admin_approved', 'in_progress'] } }),
+      TechnicianHireRequest.count({ where: { status: 'completed' } })
+    ]);
+
+    res.json({
+      success: true,
+      technicians: { total, verified, pending, rejected, suspended },
+      hires: { total: totalHires, pending: pendingHires, active: activeHires, completed: completedHires }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ADMIN — DRIVER MANAGEMENT ============
+
+// Get ALL drivers (full detail)
+router.get('/drivers', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { status, verified, search, limit = 50, offset = 0 } = req.query;
+
+    const userWhere = { is_driver: true };
+    if (verified === 'true') userWhere.driver_verified = true;
+    if (verified === 'false') userWhere.driver_verified = false;
+    if (search) {
+      userWhere[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { email: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    const profileWhere = {};
+    if (status) profileWhere.approval_status = status;
+
+    const drivers = await DriverProfile.findAll({
+      where: profileWhere,
+      include: [{
+        model: User,
+        as: 'User',
+        where: userWhere,
+        attributes: { exclude: ['password'] }
+      }],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({ success: true, data: drivers, total: drivers.length });
+  } catch (error) {
+    console.error('Admin get drivers error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin driver stats overview — MUST be before /drivers/:id
+router.get('/drivers/stats/overview', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const [total, verified, pending, rejected, suspended] = await Promise.all([
+      DriverProfile.count(),
+      DriverProfile.count({ where: { approval_status: 'approved' } }),
+      DriverProfile.count({ where: { approval_status: 'pending' } }),
+      DriverProfile.count({ where: { approval_status: 'rejected' } }),
+      DriverProfile.count({ where: { approval_status: 'suspended' } })
+    ]);
+
+    const [totalHires, pendingHires, activeHires, completedHires] = await Promise.all([
+      DriverHireRequest.count(),
+      DriverHireRequest.count({ where: { status: 'pending' } }),
+      DriverHireRequest.count({ where: { status: ['driver_accepted', 'admin_approved', 'in_progress'] } }),
+      DriverHireRequest.count({ where: { status: 'completed' } })
+    ]);
+
+    res.json({
+      success: true,
+      drivers: { total, verified, pending, rejected, suspended },
+      hires: { total: totalHires, pending: pendingHires, active: activeHires, completed: completedHires }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get single driver full detail + hire history
+router.get('/drivers/:id', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const profile = await DriverProfile.findOne({
+      where: { user_id: req.params.id },
+      include: [{ model: User, as: 'User', attributes: { exclude: ['password'] } }]
+    });
+
+    if (!profile) return res.status(404).json({ error: 'Driver profile not found' });
+
+    const hireHistory = await DriverHireRequest.findAll({
+      where: { driver_id: req.params.id },
+      include: [{ model: User, as: 'Requester', attributes: ['id', 'name', 'email', 'store_name'] }],
+      order: [['created_at', 'DESC']],
+      limit: 20
+    });
+
+    res.json({ success: true, data: { profile, hireHistory } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin approve driver profile
+router.put('/drivers/:id/approve', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const profile = await DriverProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Driver not found' });
+
+    profile.is_verified = true;
+    profile.approval_status = 'approved';
+    if (notes) profile.admin_notes = notes;
+    await profile.save();
+
+    await User.update({ driver_verified: true }, { where: { id: req.params.id } });
+
+    res.json({ success: true, message: 'Driver approved successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin reject driver profile
+router.put('/drivers/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason, notes } = req.body;
+    const profile = await DriverProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Driver not found' });
+
+    profile.is_verified = false;
+    profile.approval_status = 'rejected';
+    profile.rejection_reason = reason;
+    if (notes) profile.admin_notes = notes;
+    await profile.save();
+
+    await User.update({ driver_verified: false, rejection_reason: reason }, { where: { id: req.params.id } });
+
+    res.json({ success: true, message: 'Driver rejected' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin suspend driver
+router.put('/drivers/:id/suspend', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const profile = await DriverProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Driver not found' });
+
+    profile.is_verified = false;
+    profile.is_available = false;
+    profile.approval_status = 'suspended';
+    profile.admin_notes = reason || 'Suspended by admin';
+    await profile.save();
+
+    res.json({ success: true, message: 'Driver suspended' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin update driver role/assignment
+router.put('/drivers/:id/role', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { appointed_vendor_id, is_available, admin_notes } = req.body;
+    const profile = await DriverProfile.findOne({ where: { user_id: req.params.id } });
+    if (!profile) return res.status(404).json({ error: 'Driver not found' });
+
+    if (appointed_vendor_id !== undefined) profile.appointed_vendor_id = appointed_vendor_id;
+    if (is_available !== undefined) profile.is_available = is_available;
+    if (admin_notes !== undefined) profile.admin_notes = admin_notes;
+    await profile.save();
+
+    res.json({ success: true, message: 'Driver role/assignment updated', data: profile });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ ADMIN — ALL DRIVER HIRE REQUESTS ============
+
+// Get all driver hire requests
+router.get('/driver-hires', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { status, limit = 50, offset = 0 } = req.query;
+    const where = {};
+    if (status) where.status = status;
+
+    const hires = await DriverHireRequest.findAll({
+      where,
+      include: [
+        { model: User, as: 'Requester', attributes: ['id', 'name', 'email', 'store_name', 'role'] },
+        { model: User, as: 'Driver', attributes: ['id', 'name', 'email', 'driver_rating', 'driver_home_city', 'driver_vehicle_type'] }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: parseInt(limit),
+      offset: parseInt(offset)
+    });
+
+    res.json({ success: true, data: hires, total: hires.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin approve a driver hire request
+router.put('/driver-hires/:id/approve', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { notes } = req.body;
+    const hireReq = await DriverHireRequest.findByPk(req.params.id);
+    if (!hireReq) return res.status(404).json({ error: 'Hire request not found' });
+
+    hireReq.admin_approval = true;
+    hireReq.status = 'admin_approved';
+    hireReq.admin_notes = notes;
+    hireReq.admin_reviewed_at = new Date();
+    await hireReq.save();
+
+    res.json({ success: true, message: 'Driver hire request approved', data: hireReq });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin reject a driver hire request
+router.put('/driver-hires/:id/reject', verifyToken, isAdmin, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const hireReq = await DriverHireRequest.findByPk(req.params.id);
+    if (!hireReq) return res.status(404).json({ error: 'Hire request not found' });
+
+    hireReq.admin_approval = false;
+    hireReq.status = 'admin_rejected';
+    hireReq.rejection_reason = reason;
+    hireReq.admin_reviewed_at = new Date();
+    await hireReq.save();
+
+    res.json({ success: true, message: 'Driver hire request rejected', data: hireReq });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
+

@@ -5,9 +5,7 @@ import {
   ArrowPathIcon, 
   PlusIcon, 
   CurrencyRupeeIcon, 
-  ShoppingBagIcon,
   ChartBarIcon,
-  EyeIcon,
   PencilIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';

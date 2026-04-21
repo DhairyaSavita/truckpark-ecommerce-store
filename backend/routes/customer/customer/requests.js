@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const ServiceRequest = require('../../models/ServiceRequest');
-const TechnicianProfile = require('../../models/TechnicianProfile');
-const User = require('../../models/User');
-const Product = require('../../models/Product');
-const ServiceReview = require('../../models/ServiceReview');
-const { verifyToken } = require('../../config/auth');
+const ServiceRequest = require('../../../models/ServiceRequest');
+const TechnicianProfile = require('../../../models/TechnicianProfile');
+const User = require('../../../models/User');
+const Product = require('../../../models/Product');
+const ServiceReview = require('../../../models/ServiceReview');
+const { verifyToken } = require('../../../config/auth');
 const { Op } = require('sequelize');
 
 // Create service request
@@ -24,16 +24,9 @@ router.post('/', verifyToken, async (req, res) => {
       estimated_duration
     } = req.body;
     
-    // Calculate estimated cost
-    let estimated_cost = 500; // Default base price
-    if (estimated_duration) {
-      const avgRate = await TechnicianProfile.findAll({
-        where: { is_verified: true, is_available: true },
-        attributes: [[sequelize.fn('AVG', sequelize.col('hourly_rate')), 'avgRate']]
-      });
-      const avgHourlyRate = avgRate[0]?.dataValues.avgRate || 500;
-      estimated_cost = avgHourlyRate * estimated_duration;
-    }
+    // Calculate estimated cost (base rate ₹500/hr)
+    const avgHourlyRate = 500;
+    const estimated_cost = estimated_duration ? avgHourlyRate * estimated_duration : 500;
     
     const request = await ServiceRequest.create({
       customer_id: req.user.id,

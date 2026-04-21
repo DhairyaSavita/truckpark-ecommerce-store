@@ -21,6 +21,22 @@ const PriceAlert = require('./models/PriceAlert');
 const B2BQuote = require('./models/B2BQuote');
 const LogisticsMessage = require('./models/LogisticsMessage');
 
+// Additional models
+const RefurbishedProduct = require('./models/RefurbishedProduct');
+const Auction = require('./models/Auction');
+const AuctionBid = require('./models/AuctionBid');
+const TechnicianProfile = require('./models/TechnicianProfile');
+const TechnicianHireRequest = require('./models/TechnicianHireRequest');
+const DriverProfile = require('./models/DriverProfile');
+const DriverHireRequest = require('./models/DriverHireRequest');
+const LogisticsProfile = require('./models/LogisticsProfile');
+const ShipmentRequest = require('./models/ShipmentRequest');
+const TripRequest = require('./models/TripRequest');
+const ServiceRequest = require('./models/ServiceRequest');
+const ServiceReview = require('./models/ServiceReview');
+const DriverReview = require('./models/DriverReview');
+const LogisticsReview = require('./models/LogisticsReview');
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -118,6 +134,106 @@ User.hasMany(LogisticsMessage, { foreignKey: 'receiver_id', as: 'ReceivedLogisti
 LogisticsMessage.belongsTo(User, { foreignKey: 'sender_id',   as: 'Sender' });
 LogisticsMessage.belongsTo(User, { foreignKey: 'receiver_id', as: 'Receiver' });
 
+// RefurbishedProduct associations
+User.hasMany(RefurbishedProduct, { foreignKey: 'seller_id', as: 'RefurbishedProducts' });
+RefurbishedProduct.belongsTo(User, { foreignKey: 'seller_id', as: 'Seller' });
+
+// Auction associations
+User.hasMany(Auction, { foreignKey: 'seller_id', as: 'Auctions' });
+Auction.belongsTo(User, { foreignKey: 'seller_id', as: 'Seller' });
+RefurbishedProduct.hasMany(Auction, { foreignKey: 'product_id', as: 'Auctions' });
+Auction.belongsTo(RefurbishedProduct, { foreignKey: 'product_id', as: 'Product' });
+
+// AuctionBid associations
+Auction.hasMany(AuctionBid, { foreignKey: 'auction_id', as: 'Bids' });
+AuctionBid.belongsTo(Auction, { foreignKey: 'auction_id' });
+User.hasMany(AuctionBid, { foreignKey: 'bidder_id', as: 'Bids' });
+AuctionBid.belongsTo(User, { foreignKey: 'bidder_id', as: 'Bidder' });
+
+// TechnicianProfile associations
+User.hasOne(TechnicianProfile, { foreignKey: 'user_id', as: 'TechnicianProfile' });
+TechnicianProfile.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+
+// TechnicianHireRequest associations
+User.hasMany(TechnicianHireRequest, { foreignKey: 'requester_id', as: 'SentHireRequests' });
+TechnicianHireRequest.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
+User.hasMany(TechnicianHireRequest, { foreignKey: 'technician_id', as: 'ReceivedHireRequests' });
+TechnicianHireRequest.belongsTo(User, { foreignKey: 'technician_id', as: 'Technician' });
+
+// DriverProfile associations
+User.hasOne(DriverProfile, { foreignKey: 'user_id', as: 'DriverProfile' });
+DriverProfile.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+
+// DriverHireRequest associations
+User.hasMany(DriverHireRequest, { foreignKey: 'requester_id', as: 'SentDriverHireRequests' });
+DriverHireRequest.belongsTo(User, { foreignKey: 'requester_id', as: 'Requester' });
+User.hasMany(DriverHireRequest, { foreignKey: 'driver_id', as: 'ReceivedDriverHireRequests' });
+DriverHireRequest.belongsTo(User, { foreignKey: 'driver_id', as: 'Driver' });
+
+// LogisticsProfile associations
+User.hasOne(LogisticsProfile, { foreignKey: 'user_id', as: 'LogisticsProfile' });
+LogisticsProfile.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
+
+// ServiceRequest associations
+User.hasMany(ServiceRequest, { foreignKey: 'customer_id', as: 'ServiceRequests' });
+ServiceRequest.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(ServiceRequest, { foreignKey: 'technician_id', as: 'TechnicianJobs' });
+ServiceRequest.belongsTo(User, { foreignKey: 'technician_id', as: 'Technician' });
+Product.hasMany(ServiceRequest, { foreignKey: 'product_id' });
+ServiceRequest.belongsTo(Product, { foreignKey: 'product_id' });
+
+// ServiceReview associations
+ServiceRequest.hasOne(ServiceReview, { foreignKey: 'service_request_id' });
+ServiceReview.belongsTo(ServiceRequest, { foreignKey: 'service_request_id' });
+User.hasMany(ServiceReview, { foreignKey: 'customer_id', as: 'GivenServiceReviews' });
+ServiceReview.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(ServiceReview, { foreignKey: 'technician_id', as: 'ReceivedServiceReviews' });
+ServiceReview.belongsTo(User, { foreignKey: 'technician_id', as: 'ReviewedTechnician' });
+
+// ShipmentRequest associations
+User.hasMany(ShipmentRequest, { foreignKey: 'customer_id', as: 'ShipmentRequests' });
+ShipmentRequest.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(ShipmentRequest, { foreignKey: 'logistics_id', as: 'HandledShipments' });
+ShipmentRequest.belongsTo(User, { foreignKey: 'logistics_id', as: 'Logistics' });
+
+// LogisticsReview associations
+ShipmentRequest.hasOne(LogisticsReview, { foreignKey: 'shipment_request_id' });
+LogisticsReview.belongsTo(ShipmentRequest, { foreignKey: 'shipment_request_id' });
+User.hasMany(LogisticsReview, { foreignKey: 'customer_id', as: 'GivenLogisticsReviews' });
+LogisticsReview.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(LogisticsReview, { foreignKey: 'logistics_id', as: 'ReceivedLogisticsReviews' });
+LogisticsReview.belongsTo(User, { foreignKey: 'logistics_id', as: 'ReviewedLogistics' });
+
+// TripRequest associations
+User.hasMany(TripRequest, { foreignKey: 'customer_id', as: 'TripRequests' });
+TripRequest.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(TripRequest, { foreignKey: 'driver_id', as: 'DriverTrips' });
+TripRequest.belongsTo(User, { foreignKey: 'driver_id', as: 'Driver' });
+
+// DriverReview associations
+TripRequest.hasOne(DriverReview, { foreignKey: 'trip_request_id' });
+DriverReview.belongsTo(TripRequest, { foreignKey: 'trip_request_id' });
+User.hasMany(DriverReview, { foreignKey: 'customer_id', as: 'GivenDriverReviews' });
+DriverReview.belongsTo(User, { foreignKey: 'customer_id', as: 'Customer' });
+User.hasMany(DriverReview, { foreignKey: 'driver_id', as: 'ReceivedDriverReviews' });
+DriverReview.belongsTo(User, { foreignKey: 'driver_id', as: 'ReviewedDriver' });
+
+// ─── FleetAssignment associations ───────────────────────────────────────────
+const FleetAssignment = require('./models/FleetAssignment');
+User.hasMany(FleetAssignment, { foreignKey: 'logistics_id', as: 'FleetAssignmentsAsLogistics' });
+User.hasMany(FleetAssignment, { foreignKey: 'driver_id',    as: 'FleetAssignmentsAsDriver' });
+FleetAssignment.belongsTo(User, { foreignKey: 'driver_id',    as: 'Driver' });
+FleetAssignment.belongsTo(User, { foreignKey: 'logistics_id', as: 'Logistics' });
+
+// ─── AppointmentSlot associations ────────────────────────────────────────────
+const AppointmentSlot = require('./models/AppointmentSlot');
+User.hasMany(AppointmentSlot, { foreignKey: 'provider_id', as: 'ProvidedSlots' });
+User.hasMany(AppointmentSlot, { foreignKey: 'booked_by',   as: 'BookedSlots' });
+AppointmentSlot.belongsTo(User, { foreignKey: 'provider_id', as: 'Provider' });
+AppointmentSlot.belongsTo(User, { foreignKey: 'booked_by',   as: 'Booker' });
+
+
+
 // ============ ROUTES ============
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
@@ -126,6 +242,7 @@ app.use('/api/cart', require('./routes/cart'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/seller/dashboard', require('./routes/seller/dashboard'));
 app.use('/api/seller/products', require('./routes/seller/products'));
 app.use('/api/seller/orders', require('./routes/seller/orders'));
 app.use('/api/seller/earnings', require('./routes/seller/earnings'));
@@ -142,6 +259,57 @@ app.use('/api/logistics/messages', require('./routes/logistics/communication'));
 // Logistics base routes (auth + shipments)
 app.use('/api/logistics/auth',      require('./routes/logistics/auth'));
 app.use('/api/logistics/shipments', require('./routes/logistics/shipments'));
+
+// Refurbisher routes
+app.use('/api/refurbisher/auth',     require('./routes/refurbisher/auth'));
+app.use('/api/refurbisher/products', require('./routes/refurbisher/products'));
+app.use('/api/refurbisher/auctions', require('./routes/refurbisher/auctions'));
+
+// Public auction browsing routes
+app.use('/api/auctions', require('./routes/auctions/public'));
+
+// Technician routes
+app.use('/api/technician/auth',     require('./routes/technician/auth'));
+app.use('/api/technician/requests', require('./routes/technician/requests'));
+app.use('/api/technician/hire',     require('./routes/technician/hire'));
+
+// Vendor technician routes
+app.use('/api/vendor/technicians',  require('./routes/vendor/technicians'));
+
+// Driver routes
+app.use('/api/driver/auth',  require('./routes/driver/auth'));
+app.use('/api/driver/trips', require('./routes/driver/trips'));
+app.use('/api/driver/hire',  require('./routes/driver/hire'));
+
+// Vendor driver routes
+app.use('/api/vendor/drivers', require('./routes/vendor/drivers'));
+
+// Vendor analytics routes
+app.use('/api/vendor', require('./routes/vendor/analytics'));
+
+// Customer service/trip/shipment routes
+app.use('/api/customer/service-requests', require('./routes/customer/customer/requests'));
+app.use('/api/customer/shipments',        require('./routes/customer/shipments'));
+app.use('/api/customer/trips',            require('./routes/customer/trips'));
+
+// Support tickets sub-route
+app.use('/api/support/tickets', require('./routes/support/tickets'));
+
+// ════════════════════════════════════════════════════════════════════════════
+// ECOSYSTEM EXTENSION ROUTES (Fleet, Appointments, Notifications, Scheduler)
+// ════════════════════════════════════════════════════════════════════════════
+
+// Fleet management & auto-scheduler (Logistics Partner)
+app.use('/api/logistics/fleet',       require('./routes/logistics/fleet'));
+app.use('/api/logistics/scheduler',   require('./routes/logistics/scheduler'));
+
+// Cross-role appointment booking
+app.use('/api/appointments',          require('./routes/appointments/slots'));
+
+// Unified notification system (all roles)
+app.use('/api/notifications',         require('./routes/notifications'));
+
+
 
 // ============ HEALTH CHECK ============
 app.get('/api/health', (_req, res) => {

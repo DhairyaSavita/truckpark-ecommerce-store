@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle, { ThemeToggleSwitch } from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 import { 
   ShoppingCartIcon, 
   UserIcon,
@@ -84,10 +85,10 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-2">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <span className={`text-2xl font-bold ${scrolled ? 'text-primary-600' : 'text-white'}`}>
-                  TruckParts
+                  MysterAI 
                 </span>
                 <span className={`text-xl font-semibold ${scrolled ? 'text-gray-700' : 'text-gray-300'}`}>
-                  Market
+                   " Market"
                 </span>
               </motion.div>
             </Link>
@@ -473,6 +474,9 @@ const Navbar = () => {
 
               {/* ── Theme Toggle (always visible in desktop nav) ── */}
               <ThemeToggle />
+
+              {/* ── Notification Bell (logged-in users only) ── */}
+              <NotificationBell />
 
               {!user && (
                 <div className="flex items-center space-x-3">

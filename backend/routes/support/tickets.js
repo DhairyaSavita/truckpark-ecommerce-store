@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const SupportTicket = require('../../models/SupportTicket');
+const User = require('../../models/User');
 const { verifyToken, isAdmin } = require('../../config/auth');
 
 // Create support ticket

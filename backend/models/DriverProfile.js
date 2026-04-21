@@ -70,6 +70,30 @@ const DriverProfile = sequelize.define('DriverProfile', {
   is_verified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  approval_status: {
+    type: DataTypes.STRING,
+    defaultValue: 'pending',
+    validate: { isIn: [['pending', 'approved', 'rejected', 'suspended']] }
+  },
+  total_reviews: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  service_areas: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: []
+  },
+  appointed_vendor_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Set when a vendor exclusively appoints this driver'
+  },
+  rejection_reason: {
+    type: DataTypes.TEXT
+  },
+  admin_notes: {
+    type: DataTypes.TEXT
   }
 }, {
   tableName: 'driver_profiles',

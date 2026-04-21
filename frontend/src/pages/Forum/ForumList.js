@@ -24,6 +24,7 @@ const ForumList = () => {
     { value: 'announcements', label: 'Announcements', icon: '📣' }
   ];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPosts();
   }, [selectedCategory, searchTerm]);
@@ -71,7 +72,7 @@ const ForumList = () => {
     }
     
     try {
-      const response = await forumAPI.createPost(newPost);
+      await forumAPI.createPost(newPost);
       toast.success('Post created successfully!');
       setShowCreateModal(false);
       setNewPost({ title: '', content: '', category: 'general' });

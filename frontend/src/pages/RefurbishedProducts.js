@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { refurbishedAPI } from '../services/api';
-import { ArrowPathIcon, CurrencyRupeeIcon, ShieldCheckIcon, TruckIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ShieldCheckIcon, TruckIcon } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 
 const RefurbishedProducts = () => {
@@ -11,6 +11,7 @@ const RefurbishedProducts = () => {
 
   const conditions = ['all', 'Like New', 'Excellent', 'Good', 'Fair', 'For Parts'];
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchProducts();
   }, [selectedCondition, sortBy]);
@@ -18,7 +19,6 @@ const RefurbishedProducts = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      let url = '/refurbished/products';
       const params = new URLSearchParams();
       if (selectedCondition !== 'all') params.append('condition', selectedCondition);
       if (sortBy) params.append('sort', sortBy);

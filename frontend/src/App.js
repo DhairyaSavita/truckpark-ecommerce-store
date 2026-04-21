@@ -59,6 +59,9 @@ const AdminInventory      = lazy(() => import('./pages/Admin/Inventory'));
 const AdminSupportTickets = lazy(() => import('./pages/Admin/AdminSupportTickets'));
 const SuperAdminDashboard = lazy(() => import('./pages/Admin/SuperAdminDashboard'));
 const AdminLogistics      = lazy(() => import('./pages/Admin/AdminLogistics'));
+const AdminApprovals      = lazy(() => import('./pages/Admin/AdminApprovals'));
+const AdminTechnicians    = lazy(() => import('./pages/Admin/AdminTechnicians'));
+const AdminDrivers        = lazy(() => import('./pages/Admin/AdminDrivers'));
 
 // Seller
 const SellerDashboard  = lazy(() => import('./pages/Seller/Dashboard'));
@@ -66,6 +69,27 @@ const SellerProducts   = lazy(() => import('./pages/Seller/Products'));
 const SellerOrders     = lazy(() => import('./pages/Seller/Orders'));
 const SellerEarnings   = lazy(() => import('./pages/Seller/Earnings'));
 const AddProductSimple = lazy(() => import('./pages/Seller/AddProductSimple'));
+
+// Technician
+const TechnicianMarketplace = lazy(() => import('./pages/TechnicianMarketplace'));
+const MyHireRequests        = lazy(() => import('./pages/Technician/MyHireRequests'));
+
+// Driver
+const DriverMarketplace   = lazy(() => import('./pages/DriverMarketplace'));
+const DriverHireRequests  = lazy(() => import('./pages/Driver/DriverHireRequests'));
+
+// Vendor
+const VendorTechnicians = lazy(() => import('./pages/Vendor/VendorTechnicians'));
+const VendorDrivers     = lazy(() => import('./pages/Vendor/VendorDrivers'));
+
+// ── Ecosystem Extension ── Fleet, Appointments, Community ────────────────────
+const FleetManagement       = lazy(() => import('./pages/Logistics/FleetManagement'));
+const AutoScheduler         = lazy(() => import('./pages/Logistics/AutoScheduler'));
+const AppointmentCalendar   = lazy(() => import('./pages/Appointments/AppointmentCalendar'));
+const MyAppointments        = lazy(() => import('./pages/Appointments/MyAppointments'));
+const ProviderCommunity     = lazy(() => import('./pages/Community/ProviderCommunity'));
+const RouteMap              = lazy(() => import('./pages/Driver/RouteMap'));
+const ServiceBookings       = lazy(() => import('./pages/Seller/ServiceBookings'));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Loading Fallback — shown while a lazy chunk is downloading
@@ -135,10 +159,37 @@ function AppRoutes() {
         <Route path="/installations"        element={<PrivateRoute><InstallationsPage /></PrivateRoute>} />
         <Route path="/profile"              element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/technician/dashboard" element={<PrivateRoute><TechnicianDashboard /></PrivateRoute>} />
+        <Route path="/technician/hire-requests" element={<PrivateRoute><MyHireRequests /></PrivateRoute>} />
         <Route path="/driver/dashboard"     element={<PrivateRoute><DriverDashboard /></PrivateRoute>} />
+        <Route path="/driver/hire-requests" element={<PrivateRoute><DriverHireRequests /></PrivateRoute>} />
         <Route path="/logistics/dashboard"  element={<PrivateRoute><LogisticsDashboard /></PrivateRoute>} />
         <Route path="/logistics/messages"   element={<PrivateRoute><LogisticsCommunication /></PrivateRoute>} />
         <Route path="/refurbisher/dashboard" element={<PrivateRoute><RefurbisherDashboard /></PrivateRoute>} />
+        <Route path="/vendor/technicians"   element={<PrivateRoute><VendorTechnicians /></PrivateRoute>} />
+        <Route path="/vendor/drivers"       element={<PrivateRoute><VendorDrivers /></PrivateRoute>} />
+
+        {/* Public Marketplaces */}
+        <Route path="/technicians" element={<TechnicianMarketplace />} />
+        <Route path="/drivers"     element={<DriverMarketplace />} />
+
+        {/* Provider Community — open to all */}
+        <Route path="/community"   element={<ProviderCommunity />} />
+
+        {/* Appointment System */}
+        <Route path="/appointments"     element={<AppointmentCalendar />} />
+        <Route path="/appointments/my"  element={<PrivateRoute><MyAppointments /></PrivateRoute>} />
+
+        {/* Fleet Management (Logistics) */}
+        <Route path="/logistics/fleet"      element={<PrivateRoute><FleetManagement /></PrivateRoute>} />
+        <Route path="/logistics/scheduler"  element={<PrivateRoute><AutoScheduler /></PrivateRoute>} />
+
+        {/* Driver Route Map */}
+        <Route path="/driver/routes"        element={<PrivateRoute><RouteMap /></PrivateRoute>} />
+
+        {/* Seller Service Booking */}
+        <Route path="/seller/service-bookings" element={<PrivateRoute><ServiceBookings /></PrivateRoute>} />
+
+
 
         {/* Admin */}
         <Route path="/admin"                  element={<PrivateRoute adminOnly><AdminDashboard /></PrivateRoute>} />
@@ -151,6 +202,9 @@ function AppRoutes() {
         <Route path="/admin/support-tickets"  element={<PrivateRoute adminOnly><AdminSupportTickets /></PrivateRoute>} />
         <Route path="/admin/super"            element={<PrivateRoute adminOnly><SuperAdminDashboard /></PrivateRoute>} />
         <Route path="/admin/logistics"        element={<PrivateRoute adminOnly><AdminLogistics /></PrivateRoute>} />
+        <Route path="/admin/approvals"        element={<PrivateRoute adminOnly><AdminApprovals /></PrivateRoute>} />
+        <Route path="/admin/technicians"      element={<PrivateRoute adminOnly><AdminTechnicians /></PrivateRoute>} />
+        <Route path="/admin/drivers"          element={<PrivateRoute adminOnly><AdminDrivers /></PrivateRoute>} />
 
         {/* Seller */}
         <Route path="/seller"               element={<PrivateRoute sellerOnly><SellerDashboard /></PrivateRoute>} />
@@ -175,34 +229,34 @@ function App() {
       <Router>
         <AuthProvider>
           <div style={{ minHeight: '100vh', background: 'var(--bg-page)', transition: 'background 0.35s ease, color 0.35s ease' }}>
-          <Navbar />
-          <AppRoutes />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3500,
-              style: {
-                borderRadius: '12px',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '14px',
-                background: '#141D2E',
-                color: '#F1F5F9',
-                border: '1px solid rgba(255,255,255,0.08)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-              },
-              success: {
-                iconTheme: { primary: '#F97316', secondary: '#141D2E' },
-              },
-              error: {
-                iconTheme: { primary: '#F43F5E', secondary: '#141D2E' },
-              },
-            }}
-          />
-          <Chatbot />
-        </div>
-      </AuthProvider>
-    </Router>
-  </ThemeProvider>
+            <Navbar />
+            <AppRoutes />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  borderRadius: '12px',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: '14px',
+                  background: '#141D2E',
+                  color: '#F1F5F9',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                },
+                success: {
+                  iconTheme: { primary: '#F97316', secondary: '#141D2E' },
+                },
+                error: {
+                  iconTheme: { primary: '#F43F5E', secondary: '#141D2E' },
+                },
+              }}
+            />
+            <Chatbot />
+          </div>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

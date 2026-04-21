@@ -86,6 +86,18 @@ export const technicianAPI = {
   getMyRequests: () => api.get('/technician/requests/my-requests'),
   updateRequestStatus: (id, status) => api.put(`/technician/requests/${id}/status`, { status }),
   getEarnings: () => api.get('/technician/earnings'),
+  // Hire system
+  browseTechnicians: (params) => api.get('/technician/hire/browse', { params }),
+  getTechnicianPublicProfile: (id) => api.get(`/technician/hire/${id}/profile`),
+  sendHireRequest: (technicianId, data) => api.post(`/technician/hire/${technicianId}/request`, data),
+  getMyHireRequests: () => api.get('/technician/hire/my-hire-requests'),
+  respondToHire: (requestId, action, notes) => api.put(`/technician/hire/${requestId}/respond`, { action, technician_notes: notes }),
+  startHireWork: (requestId) => api.put(`/technician/hire/${requestId}/start`),
+  completeHireWork: (requestId, data) => api.put(`/technician/hire/${requestId}/complete`, data),
+  getMyHires: (params) => api.get('/technician/hire/my-hires', { params }),
+  confirmHireCompletion: (requestId) => api.put(`/technician/hire/${requestId}/confirm`),
+  cancelHire: (requestId, reason) => api.put(`/technician/hire/${requestId}/cancel`, { reason }),
+  updateCertifications: (data) => api.put('/technician/hire/certifications', data),
 };
 
 // Driver API
@@ -99,6 +111,17 @@ export const driverAPI = {
   getMyTrips: () => api.get('/driver/trips/my-trips'),
   updateTripStatus: (id, status) => api.put(`/driver/trips/${id}/status`, { status }),
   getEarnings: () => api.get('/driver/earnings'),
+  // Hire system
+  browseDrivers: (params) => api.get('/driver/hire/browse', { params }),
+  getDriverPublicProfile: (id) => api.get(`/driver/hire/${id}/profile`),
+  sendHireRequest: (driverId, data) => api.post(`/driver/hire/${driverId}/request`, data),
+  getMyHireRequests: () => api.get('/driver/hire/my-hire-requests'),
+  respondToHire: (requestId, action, notes) => api.put(`/driver/hire/${requestId}/respond`, { action, driver_notes: notes }),
+  startHireTrip: (requestId) => api.put(`/driver/hire/${requestId}/start`),
+  completeHireTrip: (requestId, data) => api.put(`/driver/hire/${requestId}/complete`, data),
+  getMyHires: (params) => api.get('/driver/hire/my-hires', { params }),
+  confirmHireTrip: (requestId) => api.put(`/driver/hire/${requestId}/confirm`),
+  cancelHire: (requestId, reason) => api.put(`/driver/hire/${requestId}/cancel`, { reason }),
 };
 
 // Logistics API
@@ -235,10 +258,10 @@ export const admin = {
   getPendingSellers: () => api.get('/admin/pending/sellers'),
   getPendingTechnicians: () => api.get('/admin/pending/technicians'),
   getPendingDrivers: () => api.get('/admin/pending/drivers'),
+  getPendingLogistics: () => api.get('/admin/pending/logistics'),
   getPendingRefurbishers: () => api.get('/admin/pending/refurbishers'),
   approveUser: (type, id) => api.put(`/admin/approve/${type}/${id}`),
   rejectUser: (type, id, reason) => api.put(`/admin/reject/${type}/${id}`, { reason }),
-  
   // Regular Admin endpoints
   getStats: () => api.get('/admin/stats'),
   getUsers: () => api.get('/admin/users'),
@@ -256,8 +279,55 @@ export const admin = {
   getUrgentTickets: () => api.get('/admin/support-tickets/urgent'),
   updateSupportTicket: (id, data) => api.put(`/admin/support-tickets/${id}`, data),
   deleteSupportTicket: (id) => api.delete(`/admin/support-tickets/${id}`),
+  // Technician Admin endpoints
+  getTechnicians: (params) => api.get('/admin/technicians', { params }),
+  getTechnicianDetail: (id) => api.get(`/admin/technicians/${id}`),
+  approveTechnician: (id, notes) => api.put(`/admin/technicians/${id}/approve`, { notes }),
+  rejectTechnician: (id, reason, notes) => api.put(`/admin/technicians/${id}/reject`, { reason, notes }),
+  suspendTechnician: (id, reason) => api.put(`/admin/technicians/${id}/suspend`, { reason }),
+  updateTechnicianRole: (id, data) => api.put(`/admin/technicians/${id}/role`, data),
+  getTechnicianStats: () => api.get('/admin/technicians/stats/overview'),
+  getAllHireRequests: (params) => api.get('/admin/technician-hires', { params }),
+  approveHireRequest: (id, notes) => api.put(`/admin/technician-hires/${id}/approve`, { notes }),
+  rejectHireRequest: (id, reason) => api.put(`/admin/technician-hires/${id}/reject`, { reason }),
+  // Driver Admin endpoints
+  getDrivers: (params) => api.get('/admin/drivers', { params }),
+  getDriverDetail: (id) => api.get(`/admin/drivers/${id}`),
+  approveDriver: (id, notes) => api.put(`/admin/drivers/${id}/approve`, { notes }),
+  rejectDriver: (id, reason, notes) => api.put(`/admin/drivers/${id}/reject`, { reason, notes }),
+  suspendDriver: (id, reason) => api.put(`/admin/drivers/${id}/suspend`, { reason }),
+  updateDriverRole: (id, data) => api.put(`/admin/drivers/${id}/role`, data),
+  getDriverStats: () => api.get('/admin/drivers/stats/overview'),
+  getAllDriverHireRequests: (params) => api.get('/admin/driver-hires', { params }),
+  approveDriverHireRequest: (id, notes) => api.put(`/admin/driver-hires/${id}/approve`, { notes }),
+  rejectDriverHireRequest: (id, reason) => api.put(`/admin/driver-hires/${id}/reject`, { reason }),
 };
 
+// Vendor Technician API
+export const vendorTechnicianAPI = {
+  getAvailable: (params) => api.get('/vendor/technicians/available', { params }),
+  getTechnicianDetail: (id) => api.get(`/vendor/technicians/${id}`),
+  hire: (data) => api.post('/vendor/technicians/hire', data),
+  getMyHires: (params) => api.get('/vendor/technicians/my-hires/list', { params }),
+  approveCompletion: (requestId) => api.put(`/vendor/technicians/hires/${requestId}/approve-completion`),
+  cancelHire: (requestId, reason) => api.put(`/vendor/technicians/hires/${requestId}/cancel`, { reason }),
+  appoint: (technicianId, notes) => api.put(`/vendor/technicians/${technicianId}/appoint`, { notes }),
+  removeAppoint: (technicianId) => api.delete(`/vendor/technicians/${technicianId}/appoint`),
+  getAppointed: () => api.get('/vendor/technicians/appointed/list'),
+};
+
+// Vendor Driver API
+export const vendorDriverAPI = {
+  getAvailable: (params) => api.get('/vendor/drivers/available', { params }),
+  getDriverDetail: (id) => api.get(`/vendor/drivers/${id}`),
+  hire: (data) => api.post('/vendor/drivers/hire', data),
+  getMyHires: (params) => api.get('/vendor/drivers/my-hires/list', { params }),
+  approveCompletion: (requestId) => api.put(`/vendor/drivers/hires/${requestId}/approve-completion`),
+  cancelHire: (requestId, reason) => api.put(`/vendor/drivers/hires/${requestId}/cancel`, { reason }),
+  appoint: (driverId, notes) => api.put(`/vendor/drivers/${driverId}/appoint`, { notes }),
+  removeAppoint: (driverId) => api.delete(`/vendor/drivers/${driverId}/appoint`),
+  getAppointed: () => api.get('/vendor/drivers/appointed/list'),
+};
 
 // Logistics Communication API (role-gated: logistics + admin + driver only; sellers BLOCKED)
 export const logisticsChatAPI = {
@@ -279,4 +349,53 @@ export const uploadAPI = {
   deleteProductImage: (filename) => api.delete(`/upload/product-image/${filename}`),
 };
 
+// ─── Appointment Booking API ──────────────────────────────────────────────────
+export const appointmentAPI = {
+  getSlots:     (params) => api.get('/appointments/slots', { params }),
+  createSlots:  (slots)  => api.post('/appointments/slots', { slots }),
+  deleteSlot:   (id)     => api.delete(`/appointments/slots/${id}`),
+  bookSlot:     (data)   => api.post('/appointments/book', data),
+  updateBooking:(id, data)=> api.patch(`/appointments/book/${id}`, data),
+  getMyAppointments:(role)=> api.get('/appointments/my', { params: { role } }),
+};
+
+// ─── Fleet Management API ─────────────────────────────────────────────────────
+export const fleetAPI = {
+  getDrivers:        (params) => api.get('/logistics/fleet/drivers', { params }),
+  getAssignments:    (params) => api.get('/logistics/fleet/assignments', { params }),
+  assignDriver:      (data)   => api.post('/logistics/fleet/assign', data),
+  updateAssignment:  (id, data)=> api.patch(`/logistics/fleet/assignments/${id}`, data),
+  getMyAssignment:   ()       => api.get('/logistics/fleet/my-assignment'),
+  updateMyStatus:    (id, status) => api.patch(`/logistics/fleet/my-assignment/${id}/status`, { status }),
+};
+
+// ─── Auto-Scheduler API ───────────────────────────────────────────────────────
+export const schedulerAPI = {
+  getRules:   ()      => api.get('/logistics/scheduler/rules'),
+  saveRules:  (rules) => api.post('/logistics/scheduler/rules', { rules }),
+  getQueue:   ()      => api.get('/logistics/scheduler/queue'),
+  runScheduler: ()    => api.post('/logistics/scheduler/run'),
+};
+
+// ─── Notification API ─────────────────────────────────────────────────────────
+export const notificationAPI = {
+  getAll:   (params) => api.get('/notifications', { params }),
+  markRead: (id)     => api.patch(`/notifications/${id}/read`),
+  readAll:  ()       => api.post('/notifications/read-all'),
+};
+
+// ─── Provider Community (extended forum) API ──────────────────────────────────
+export const communityAPI = {
+  getPosts:      (params) => api.get('/forum/posts', { params }),
+  getPost:       (id)     => api.get(`/forum/posts/${id}`),
+  createPost:    (data)   => api.post('/forum/posts', data),
+  upvotePost:    (id)     => api.post(`/forum/posts/${id}/upvote`),
+  resolvePost:   (id, comment_id) => api.patch(`/forum/posts/${id}/resolve`, { solved_by_comment_id: comment_id }),
+  addComment:    (id, content) => api.post(`/forum/posts/${id}/comments`, { content }),
+  upvoteComment: (id)     => api.post(`/forum/comments/${id}/upvote`),
+  getChannels:   ()       => api.get('/forum/channels'),
+  getStats:      ()       => api.get('/forum/stats'),
+};
+
 export default api;
+
